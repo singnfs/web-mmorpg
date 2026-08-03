@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mini MMORPG - Web</title>
+    <style>
+        body { margin: 0; background-color: #222; display: flex; justify-content: center; align-items: center; height: 100vh; color: white; font-family: sans-serif; }
+        canvas { background-color: #78a252; border: 4px solid #333; }
+        #ui { position: absolute; top: 10px; left: 10px; }
+    </style>
+</head>
+<body>
+    <div id="ui">Gunakan tombol W, A, S, D untuk bergerak</div>
+    <canvas id="gameCanvas" width="800" height="600"></canvas>
+
+    <!-- Import Socket.io dari CDN -->
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <script>
+        // Ganti URL ini dengan URL server backend kamu nanti (misal dari Render/Glitch)
+        const socket = io('https://server-mmo-kamu.onrender.com'); 
+        
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Data pemain
+        let players = {};
+        const myId = Math.random().toString(36).substring(7);
+        let myPlayer = { x: 400, y: 300, color: 'blue' };
+
+        // Kontrol pergerakan
+        const keys = { w: false, a: false, s: false, d: false };
+        window.addEventListener('keydown', (e) => keys[e.key] = true);
+        window.addEventListener('keyup', (e) => keys[e.key] = false);
+
+        // Update loop
+        function update() {
+            let moved = false;
+            const speed = 5;
+
+            if (keys.w && myPlayer.y > 0) { myPlayer.y -= speed; moved = true; }
+            if (keys.s && myPlayer.y < canvas.height) { myPlayer.y += speed; moved = true; }
+            if (keys.a && myPlayer.x > 0) { myPlayer.x -= speed; moved = true; }
+            if (keys.d && myPlayer.x < canvas.width) { myPlayer.x += speed; moved = true; }
+
+            if (moved) {
+                // Kirim posisi ke server
+                socket.emit('playerMovement', { id: myId, x: myPlayer.x, y: myPlayer.y });
+            }
+        }
+
+        // Render loop
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Gambar semua pemain dari server
+            for (let id in players) {
+                ctx.fillStyle = players[id].color;
+                ctx.fillRect(players[id].x, players[id].y, 30, 30);
+            }
+            
+            // Gambar karakter kita sendiri
+            ctx.fillStyle = myPlayer.color;
+            ctx.fillRect(myPlayer.x, myPlayer.y, 30, 30);
+        }
+
+        // Terima data dari server
+        socket.on('stateUpdate', (serverPlayers) => {
+            players = serverPlayers;
+        });
+
+        // Game Loop utama
+        function gameLoop() {
+            update();
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+        gameLoop();
+    </script>
+</body>
+</html>
