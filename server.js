@@ -26,6 +26,8 @@ function persist() {
     }, 500);
 }
 
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin';
+const chat = { Global: [], Trade: [], Support: [] };
 const online = {};   // socket.id -> profil pemain
 const parties = {};  // id -> {id,name,owner,members:[socket.id]}
 const clean = (v, max = 24) => String(v || '').replace(/[<>"'`]/g, '').trim().slice(0, max);
@@ -175,6 +177,59 @@ io.on('connection', (socket) => {
         }
         persist();
         broadcast();
+    });
+
+    // ===== Chat =====
+    socket.on('chat:history', (cb) => { if (typeof cb === 'function') cb(chat); });
+    socket.on('chat:send', ({ ch, txt, key } = {}) => {
+        const me = online[socket.id];
+        if (!me || !chat[ch]) return;
+        txt = String(txt || '').trim().slice(0, 200);
+        if (!txt) return;
+        const now = Date.now();
+        if (socket.lastChat && now - socket.lastChat < 1500) return; // anti-spam
+        socket.lastChat = now;
+        const m = { ch, name: me.name, av: me.av, txt, t: now, mod: me.name.toLowerCase() === 'admin' && key === ADMIN_PASSWORD };
+        chat[ch].push(m);
+        if (chat[ch].length > 60) chat[ch].shift();
+        io.emit('chat:msg', m);
+    });
+
+    // ===== Admin (butuh ADMIN_PASSWORD) =====
+    socket.on('admin', ({ key, cmd, args } = {}, cb) => {
+        const reply = (ok, msg, data) => typeof cb === 'function' && cb({ ok, msg, data });
+        const me = online[socket.id];
+        if (!me || me.name.toLowerCase() !== 'admin' || key !== ADMIN_PASSWORD) return reply(false, 'Password admin salah');
+        args = args || {};
+        if (cmd === 'announce') {
+            const txt = clean(args.txt, 200);
+            if (!txt) return reply(false, 'Pesan kosong');
+            io.emit('announce', { txt });
+            return reply(true, 'Pengumuman terkirim');
+        }
+        if (cmd === 'gift') {
+            if (!online[args.id]) return reply(false, 'Pemain offline');
+            io.to(args.id).emit('admin:gift', { gold: num(args.gold), dia: num(args.dia), items: [] });
+            return reply(true, 'Hadiah terkirim ke ' + online[args.id].name);
+        }
+        if (cmd === 'kick') {
+            const t = io.sockets.sockets.get(args.id);
+            if (!t) return reply(false, 'Pemain offline');
+            t.emit('admin:kicked');
+            setTimeout(() => t.disconnect(true), 300);
+            return reply(true, 'Pemain di-kick');
+        }
+        if (cmd === 'clearMarket') { db.listings = []; persist(); broadcast(); return reply(true, 'Market dikosongkan'); }
+        if (cmd === 'clearChat') { Object.keys(chat).forEach(k => chat[k] = []); return reply(true, 'Chat dikosongkan'); }
+        if (cmd === 'delGuild') { delete db.guilds[args.name]; persist(); broadcast(); return reply(true, 'Guild dihapus'); }
+        if (cmd === 'stats') {
+            return reply(true, 'Statistik', {
+                'Pemain online': Object.keys(online).length, 'Pemain terdaftar': Object.keys(db.known).length,
+                'Listing market': db.listings.length, 'Guild': Object.keys(db.guilds).length,
+                'Party aktif': Object.keys(parties).length, 'Pesan chat': Object.values(chat).reduce((a, c) => a + c.length, 0)
+            });
+        }
+        reply(false, 'Perintah tidak dikenal');
     });
 
     socket.on('disconnect', () => {

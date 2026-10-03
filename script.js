@@ -5,10 +5,10 @@ let s=null,SK="",enemy=null,node=null,cooldown=false,isAdmin=false,logs=[];
 const RAR=[["Common","#b0b0b0"],["Uncommon","#4cd964"],["Rare","#4da6ff"],["Elite","#c56cf0"],["Epic","#ff9f43"],["Legendary","#ff4757"],["Celestial","#5ce1e6","linear-gradient(90deg,#5ce1e6,#3a6bff)"],["Exotic","#b58cff","linear-gradient(90deg,#4cd964,#b58cff)"]];
 const W=[58,20,15,4.5,1.8,.6,.08,.02]; // bobot drop tiap rarity (%)
 // nama:[rarity,tipe,stat utama,harga,{lv,str,def,crit,dex}] — data asli SimpleMMO dari items-db.js (smmo-db.com)
-const CUSTOM_ITEMS={"Healing Herb":[0,"potion",35,20,{lv:1}],"Iron Ore":[0,"mat",0,10,{lv:1}],"Oak Log":[0,"mat",0,8,{lv:1}],"Trout":[0,"mat",0,9,{lv:1}],"Old Coin Pouch":[1,"mat",0,40,{lv:1}]};
+const CUSTOM_ITEMS={"Mushroom of Energy":[1,"mat",0,500,{lv:1}],"Healing Herb":[0,"potion",35,20,{lv:1}],"Iron Ore":[0,"mat",0,10,{lv:1}],"Oak Log":[0,"mat",0,8,{lv:1}],"Trout":[0,"mat",0,9,{lv:1}],"Old Coin Pouch":[1,"mat",0,40,{lv:1}]};
 const ITEMS=Object.assign({},DB_ITEMS,CUSTOM_ITEMS);
 const IMG_BASE="https://web.simple-mmo.com/img/";
-const ITEM_IMG=Object.assign({},DB_IMG,{"Healing Herb":"icons/midnight/collectibles/Flower4.png","Iron Ore":"icons/crafting/materials/IronOreSpriteSmall.png","Oak Log":"icons/events/christmas-25/materials/Offering%20Log.gif","Old Coin Pouch":"icons/I_GoldCoin.png","Trout":"icons/I_Fang.png"});
+const ITEM_IMG=Object.assign({},DB_IMG,{"Healing Herb":"icons/midnight/collectibles/Flower4.png","Iron Ore":"icons/crafting/materials/IronOreSpriteSmall.png","Oak Log":"icons/events/christmas-25/materials/Offering%20Log.gif","Old Coin Pouch":"icons/I_GoldCoin.png","Trout":"icons/I_Fang.png","Mushroom of Energy":"icons/midnight/collectibles/Flower4.png"});
 const TOOLK={"Pickaxe":"pickaxe","Axe":"wood axe","Fishing Rod":"fishing rod","Shovel":"shovel"};
 Object.entries(TOOLK).forEach(([t,k])=>{const n=Object.keys(DB_ITEMS).find(x=>DB_ITEMS[x][1]==="tool"&&DB_ITEMS[x][4].kind===k);if(n)ITEM_IMG[t]=DB_IMG[n]});
 const imgUrl=p=>/^https?:/.test(p)?p:IMG_BASE+p;
@@ -66,17 +66,25 @@ function rollItem(minR=0,lvl){
  return p[rand(0,p.length-1)];
 }
 
-function doLogin(){
- const un=document.getElementById("username").value.trim();
+const PAGE=document.body.dataset.page||"";
+const PAGE_FILE={home:"index.html",hub:"battle.html",town:"town.html",quests:"quests.html",inventory:"inventory.html",stats:"profile.html",char:"character.html",tasks:"tasks.html",craft:"crafting.html",prof:"profession.html",collect:"collections.html",awards:"awards.html",market:"market.html",guilds:"guilds.html",leader:"leaderboards.html",party:"party.html",notes:"notifications.html",diamond:"diamond-store.html",settings:"settings.html",events:"events.html",support:"support.html",about:"about.html",admin:"admin.html"};
+function navGo(p){const f=PAGE_FILE[p];if(!f)return openPanel(p);if(PAGE===p||(p==="home"&&!PAGE))return p==="home"?closePanel():openPanel(p);location.href=f}
+function doLogout(){localStorage.removeItem("sq_user");sessionStorage.removeItem("sq_akey");location.href="index.html"}
+function doLogin(auto){
+ const un=(auto||document.getElementById("username").value).trim();
  if(!un){alert("Username kosong!");return}
+ if(!auto){localStorage.setItem("sq_user",un);const pw=document.getElementById("password").value;if(un.toLowerCase()==="admin"&&pw)sessionStorage.setItem("sq_akey",pw)}
  isAdmin=un.toLowerCase()==="admin";
  SK=KEY+un.toLowerCase();
  s=Object.assign(def(),JSON.parse(localStorage.getItem(SK)||"null")||{});
  s.name=un;
  s.inv=s.inv.filter(n=>ITEMS[n]);Object.keys(s.eq).forEach(k=>{if(s.eq[k]&&!ITEMS[s.eq[k]])s.eq[k]=null});s.party=[];if(s.av==null)s.av=Math.max(0,AVATARS.findIndex(a=>a[0]==="Yashinzen"));
- document.getElementById("loginOverlay").style.display="none";
+ const lo=document.getElementById("loginOverlay");if(lo)lo.style.display="none";
  document.getElementById("gameScreen").style.display="flex";
- toast(isAdmin?"Login Admin Aktif!":"Welcome, "+un);netInit();
+ if(!auto)toast(isAdmin?"Login Admin Aktif!":"Welcome, "+un);netInit();
+ document.querySelectorAll(".admin-only").forEach(e=>e.classList.toggle("hidden",!isAdmin));
+ document.querySelectorAll(".bottom-nav [data-nav]").forEach(e=>e.classList.toggle("active",e.dataset.nav===(PAGE||"home")));
+ if(PAGE)setTimeout(()=>openPanel(PAGE),0);
  save();
 }
 
@@ -102,7 +110,7 @@ function eventText(text){
 function addXP(n){
  if(s.pa&&s.pa.exp>Date.now())n=Math.ceil(n*1.05);
  s.xp+=n;s.tx+=n;let lv=0;
- while(s.xp>=nextXP()){s.xp-=nextXP();s.level++;lv++;s.maxHp+=10;s.hp=s.maxHp;s.pts+=4;s.feed.unshift(["Reached level "+s.level,Date.now()]);s.feed.length=Math.min(s.feed.length,20)}
+ while(s.xp>=nextXP()){s.xp-=nextXP();s.level++;lv++;s.maxHp+=10;s.hp=s.maxHp;s.pts+=4;s.feed.unshift(["Reached level "+s.level,Date.now()]);(s.notes=s.notes||[]).unshift(["System","⬆️ Kamu mencapai level "+s.level,Date.now()]);s.nu=(s.nu||0)+1;s.feed.length=Math.min(s.feed.length,20)}
  return lv;
 }
 function addGold(n){s.gold+=n}
@@ -113,6 +121,7 @@ function skillXP(k,x){
 
 function updateUI(){
  if(!s)return;
+ const nb=document.getElementById("notif");if(nb){nb.textContent=s.nu||0;nb.classList.toggle("hidden",!s.nu)}
  document.querySelectorAll("#gameScreen .avatar,#sideMenu .avatar").forEach(e=>{if(e.dataset.av!=String(s.av)){e.innerHTML=avHTML();e.dataset.av=s.av}});const na=document.getElementById("navAv");if(na&&na.dataset.av!=String(s.av)){na.innerHTML=avHTML("nav");na.dataset.av=s.av}
  for(const [id,v] of [["level",s.level],["gold",s.gold.toLocaleString()],["xp",s.xp],["nextXp",nextXP()],["playerName",s.name],["energyTxt",s.energy],["qEnergyTxt",s.qe],["hpTxt",s.hp+"/"+s.maxHp],["menuName",s.name],["menuLvl",s.level]]){
   const el=document.getElementById(id);if(el)el.textContent=v;
@@ -175,7 +184,7 @@ function takeStep(sprint=false){
   t=`👣 ${FLAVOR[rand(0,FLAVOR.length-1)]} +${xp} EXP & +${g} Gold.${lv?` LEVEL UP! Lv ${s.level}.`:""}`;
   showDrop(`+${xp} EXP`,"#00ff88");showDrop(`+${g} Gold`,"#ffcc00",150,25);
  }else if(r<.50){
-  const n=rollItem(),xp=rand(s.level,2*s.level+1);s.inv.push(n);addXP(xp);
+  const n=chance(.12)?"Mushroom of Energy":chance(.35)?MATN[Math.min(5,(()=>{let r=Math.random()*100,t=0;while(t<5&&r>=W[t]){r-=W[t];t++}return t})())]:rollItem(),xp=rand(s.level,2*s.level+1);s.inv.push(n);addXP(xp);
   t=`📦 Item ditemukan: ${nm(n)} (${RAR[ITEMS[n][0]][0]})! +${xp} EXP.`;
   showDrop(`+${xp} EXP`,"#00ff88");showDrop("Item!",RAR[ITEMS[n][0]][1],150,25);
  }else if(r<.62){
@@ -189,7 +198,7 @@ function takeStep(sprint=false){
   showDrop(`+${h} HP`,"#ff4757");showDrop(`+${xp} EXP`,"#00ff88",150,25);
  }else t="💨 Jalanan sunyi... tidak ada apa-apa.";
  eventText(t);partyStep();save();renderAction();
- let sec=Math.max(3500,rand(4000,9000)*(Date.now()<sprintUntil?.75:1));if(isAdmin)sec=Math.floor(sec/4);
+ let sec=Math.max(3500,rand(4000,9000)*(Date.now()<sprintUntil?.75:1));if(isAdmin)sec=Math.floor(sec/4);if(isAdmin&&s.fast)sec=300;
  btn.innerHTML='<i class="fa-solid fa-spinner fa-spin"></i> Loading...';
  btn.style.setProperty("--cd",sec+"ms");btn.classList.add("cooling");
  const sc=document.getElementById("scene");sc.style.setProperty("--cd",sec+"ms");sc.classList.remove("walk");void sc.offsetWidth;sc.classList.add("walk");
@@ -228,7 +237,7 @@ function fight(kind){
   }else msg="Seranganmu meleset! ";
   if(enemy.hp<=0)return win(msg);
  }
- const h=Math.max(1,rand(enemy.attack-3,enemy.attack+3)-dfn());
+ const h=s.god?0:Math.max(1,rand(enemy.attack-3,enemy.attack+3)-dfn());
  s.hp=Math.max(0,s.hp-h);
  eventText(`${msg}${enemy.name} membalas -${h} HP.`);
  if(s.hp===0)return lose();
@@ -279,17 +288,12 @@ function buy(i){
 
 function adminGive(t){const p=Object.keys(ITEMS).filter(k=>ITEMS[k][0]==t),n=p[rand(0,p.length-1)];s.inv.push(n);save();toast("Dapat: "+n)}
 function adminLevel(n){for(let i=0;i<n;i++)addXP(nextXP());save();toast("Level "+s.level)}
-function openAdminPanel(){
- if(!isAdmin)return toast("Akses Ditolak! Login dengan username: admin");
- document.getElementById("modalTitle").textContent="⚙️ Admin";
- document.getElementById("modalBody").innerHTML=`<button class="btn-admin" onclick="addGold(100000);save();toast('100k Gold!')">💰 100k Gold</button><button class="btn-admin" style="background:#ff4757" onclick="s.hp=s.maxHp;s.energy=100;save();toast('HP & Energy Full!')">❤️ Full Heal</button><button class="btn-admin" style="background:#1fa971" onclick="adminLevel(5)">⬆️ +5 Level</button><p style="margin:8px 0;font-size:12px;color:var(--text-muted)">Beri item random per rarity:</p>`+RAR.map((r,i)=>`<button class="btn-admin" style="background:#23252a;border:1px solid ${r[1]};color:${r[1]}" onclick="adminGive(${i})">${r[0]}</button>`).join("");
- document.getElementById("modal").classList.remove("hidden");
-}
+function openAdminPanel(){navGo("admin")}
 
 function openPanel(type){
  lastPanel=type;
  const m=document.getElementById("modal"),t=document.getElementById("modalTitle"),b=document.getElementById("modalBody");
- let h="";m.classList.toggle("full",type==="battle");m.classList.toggle("page",["char","profile","hub","inventory","shops","shop","town","loc","settings","party","myparty","leader","lbview","boards","social","events","guilds","allguilds","tasks","craft","collect","prof","bank","mahol","chests","support","diamond","awards","market","online","pvp","avatars"].includes(type));
+ let h="";m.classList.toggle("full",type==="battle");m.classList.toggle("page",["char","profile","hub","inventory","shops","shop","town","loc","settings","party","myparty","leader","lbview","boards","social","events","guilds","allguilds","tasks","craft","collect","prof","bank","mahol","chests","support","diamond","awards","market","online","pvp","avatars","notes","about","admin","chat"].includes(type)||(!!PAGE&&type!=="battle"));
  if(type==="stats"){
   t.textContent="";
   const cr=(a,v,m)=>`<div class=cm-row><b>${a}</b><span><b>${v.toLocaleString()}</b> / ${m.toLocaleString()}</span></div>`;
@@ -320,9 +324,9 @@ function openPanel(type){
   t.textContent="Battle";
   const a=ARENA[s.au],pg=s.ap[s.au]||0,row=(i,n,v)=>`<div class=srow><span>${i} ${n}</span><b>${v}</b></div>`;
   h=`<div class=card2><button class=fight style="background:#4f46e5" onclick="openPanel('arenaPve')">⚔️ Fight Monster</button><button class="fight alt" style="margin-top:8px" onclick="openPanel('pvp')">Fight Players</button></div>`
-   +`<div class=gm-sec><span>User</span></div><div class=card2><b>Energy Points</b>${pbar(s.energy,100,"#f5b82e")}<div class=cm-row><span style="color:#f5b82e"><b>${s.energy}</b>/100</span><span>+1 / 10 dtk</span></div><button class="fight alt" style="margin-top:10px" onclick="refillEnergy()">Refill Energy Points (${20*s.level}G)</button></div>`
-   +`<div class=gm-sec><span>Progress</span></div><div class=card2>${row("🧟","NPC Kills",s.kills)}${row("☄️","Player Kills",0)}${row("🗡️","World Boss Kills",s.bk)}</div>`
-   +`<div class=gm-sec><span>Battle Arena</span></div><div class=card2>${row("⚔️","Current Tier",a[0])}${row("🎁","Progress",pg+" / "+a[2])}${pbar(pg,a[2],"#2ecc71")}<button class="fight alt" style="margin-top:12px" onclick="toast('Chest: gold + 2 item')">View Completion Reward</button><button class="fight alt" style="margin-top:8px" onclick="openPanel('arena')">View Arena Tiers</button></div>`
+   +`<div class=gm-sec><span>User</span></div><div class=card2><b>Energy Points</b>${pbar(s.energy,100,"#f5b82e")}<div class=cm-row><span style="color:#f5b82e"><b>${s.energy}</b>/100</span><span>+1 / 10 dtk</span></div><button class="fight alt" style="margin-top:10px" onclick="openRefill()">⚡ Refill Energy Points</button></div>`
+   +`<div class=gm-sec><span>Progress</span></div><div class=card2>${row("🧟","NPC Kills",s.kills)}${row("☄️","Player Kills",s.pk||0)}${row("🗡️","World Boss Kills",s.bk)}</div>`
+   +`<div class=gm-sec><span>Battle Arena</span></div><div class=card2>${row("⚔️","Current Tier",a[0])}${row("🎁","Progress",pg+" / "+a[2])}${pbar(pg,a[2],"#2ecc71")}<button class="fight alt" style="margin-top:12px" onclick="openArenaReward()">View Completion Reward</button><button class="fight alt" style="margin-top:8px" onclick="openPanel('arena')">View Arena Tiers</button></div>`
    +`<div class=gm-sec><span>Upcoming World Boss</span></div><div class=card2><div class=srow><span><b>${BOSS.name}</b><br><small>Level ${BOSS.level}</small><br><small>Muncul 1% tiap langkah</small></span><button class="mini alt" onclick="toast('Jalan terus buat nemu dia!')">View</button></div></div>`;
  }else if(type==="arenaPve"){
   t.textContent="";
@@ -432,13 +436,16 @@ function openPanel(type){
    +`<p class=hint>New tasks in ${untilTxt(T.end)}</p>`;
  }else if(type==="craft"){
   t.textContent="Crafting";
-  const have=commonMats(),need=15*cq,ok=have>=need&&s.energy>=cq;
-  h=`<div class=tsec>What type of items do you want to craft?</div><div class=cbox>Common Item</div>`
+  const T=CTYPES[ct],have=matCount(T[3]),need=T[4]*cq,lock=s.craft[0]<T[2],ok=!lock&&have>=need&&s.energy>=cq;
+  h=`<div class=tsec>What type of items do you want to craft?</div><button class="cbox" style="width:100%;cursor:pointer;color:#fff" onclick="openPanel('crafttype')">${T[1]} ${T[0]} ▾</button>`
    +`<div class=tsec>How many items do you want to craft?</div><div class=sp-in><input type=number min=1 value=${cq} onchange="cq=Math.max(1,+this.value||1);openPanel('craft')"><button onclick="cq=Math.max(1,cq-1);openPanel('craft')">−</button><button onclick="cq++;openPanel('craft')">+</button></div>`
-   +`<div class=tsec>Requirements</div><div class=crow><span>🎒</span>Common Materials<em style="color:${have>=need?"#4cd964":"#ff6b6b"}">${have>=need?"✔":"✖"} ${have}/${need}</em></div>`
+   +`<div class=tsec>Requirements</div><div class=crow>${ico(MATN[T[3]],"sm")||"<span>🎒</span>"}${RAR[T[3]][0]} Materials<em style="color:${have>=need?"#4cd964":"#ff6b6b"}">${have>=need?"✔":"✖"} ${have}/${need}</em></div>`+(lock?`<div class=crow><span>🔒</span>Crafting level<em style="color:#ff6b6b">${T[2]} required</em></div>`:"")
    +`<div class=tsec>Cost</div><div class=crow><span>⚡</span>Energy cost<em>${cq}</em></div>`
-   +`<div class=tsec>Outcome</div><div class=crow><span>🔨</span>Crafting EXP<em>${15*cq}</em></div><div class=crow><span>✨</span>Character EXP<em>${cq*s.level*5}</em></div><div class=crow><span>🕒</span>Crafting Level<em>${s.craft[0]}</em></div>`
-   +`<button class=fight style="background:${ok?"#4f46e5":"#2a2a6a"};margin-top:16px" ${ok?"":"disabled"} onclick="doCraft()">Craft ${cq}x</button><p class=hint>Material Common (Slime Core, Iron Ore, Oak Log, dll) didapat dari jalan & gathering.</p>`;
+   +`<div class=tsec>Outcome</div><div class=crow><span>🔨</span>Crafting EXP<em>${(T[2]*5+15)*cq}</em></div><div class=crow><span>✨</span>Character EXP<em>${cq*s.level*5}</em></div><div class=crow><span>🕒</span>Crafting Level<em>${s.craft[0]} (${s.craft[1]}/${50*s.craft[0]})</em></div>`
+   +`<button class=fight style="background:${ok?"#4f46e5":"#2a2a6a"};margin-top:16px" onclick="doCraft()">Craft ${cq}x</button><p class=hint>Material (Common Material, Uncommon Material, dst.) ditemukan saat melangkah. Iron Ore, Oak Log, dll juga dihitung sebagai Common.</p>`;
+ }else if(type==="crafttype"){
+  t.textContent="";m.classList.remove("page");
+  h=`<div class=tsec>What do you want to craft?</div><div class=tlist>`+CTYPES.map((c,i)=>{const lk=s.craft[0]<c[2];return `<button class="${lk?"lk2":""}" onclick="ct=${i};openPanel('craft')"><span>${c[1]}</span><span class=pp><b>${c[0]}</b>${lk?`<small style="color:#e74c3c">Crafting level ${c[2]} required</small>`:""}</span></button>`}).join("")+`</div>`;
  }else if(type==="collect"){
   t.textContent="Collections";
   const u=[...new Set(s.inv.concat(Object.values(s.eq).filter(Boolean)))],c=[["Avatars","🧙",AVATARS.length],["Collectables","🔮",u.filter(n=>ITEMS[n]&&ITEMS[n][1]==="mat").length],["Items","🛡️",u.filter(n=>ITEMS[n]&&!["mat","potion"].includes(ITEMS[n][1])).length],["Sprites","🐾",s.party.length],["Backgrounds","🌄",Object.keys(s.vis||{0:1}).length],["Cards","🃏",0],["Events","🎁",0],["NPCs","👹",Object.keys(s.npc||{}).length]];
@@ -495,6 +502,24 @@ function openPanel(type){
  }else if(type==="avatars"){
   t.textContent="Avatars";
   h=`<p class=hint>Pilih avatar (data asli SimpleMMO dari smmo-db).</p><div class=avg>`+AVATARS.map((a,i)=>`<button class="avc ${i===(s.av||0)?"on2":""}" onclick="s.av=${i};save();openPanel('avatars')"><img src="${imgUrl(a[1])}" referrerpolicy="no-referrer" loading="lazy"><small>${esc(a[0])}</small></button>`).join("")+`</div>`;
+ }else if(type==="admin"){
+  t.textContent="🛡️ Admin Panel";
+  if(!isAdmin){h=`<div class="card2" style="text-align:center"><b>🔒 Akses ditolak</b><p class=hint>Login dengan username <b>admin</b> untuk membuka Admin Panel.</p></div>`}else{
+  const T=["PLAYER","ITEMS","WORLD","SAVE","SERVER"];
+  h=tabs(T,atab,"admTab")+[admPlayer,admItems,admWorld,admSave,admServer][atab]();}
+ }else if(type==="notes"){
+  t.textContent="Notifications";s.nu=0;setTimeout(save,0);
+  const L=(s.notes||[]).filter(n=>nf===0||n[0]===NCAT[nf]);
+  h=`<select class=sel onchange="nf=+this.value;openPanel('notes')">${NCAT.map((c,i)=>`<option value=${i} ${i===nf?"selected":""}>${c}</option>`).join("")}</select>`
+   +(L.length?`<div class=elist>`+L.map(n=>`<div class="er nt"><span class=ri>❗</span><div style="flex:1">${n[1]}<br><small>${ago(n[2])}</small></div><em class=ntag>${n[0]==="Player Interaction"?"Player":n[0]}</em></div>`).join("")+`</div>`:`<p class=hint>Belum ada notifikasi.</p>`)
+   +((s.notes||[]).length?`<button class="fight alt" style="margin-top:10px" onclick="s.notes=[];save();openPanel('notes')">Hapus semua</button>`:"");
+ }else if(type==="about"){
+  t.textContent="About";
+  const L=[["Game Rules","fa-shield-halved","Hormati pemain lain, jangan spam chat, jangan memakai bot/script curang, dan jangan menjual akun."],["Terms of Service","fa-triangle-exclamation","StepQuest adalah proyek fan-made gratis. Data bisa direset kapan saja selama masa pengembangan."],["Privacy Policy","fa-eye-slash","Progress karakter disimpan di browser kamu. Server hanya menyimpan nama, level, stat publik, guild, listing market, dan chat."],["Cookie Policy","fa-circle-exclamation","Kami hanya memakai localStorage untuk menyimpan save game dan sesi login. Tidak ada cookie pelacak."]];
+  h=`<div class="card2 role"><p>StepQuest menghadirkan pengalaman MMORPG dengan cara paling sederhana — terinspirasi penuh oleh SimpleMMO. Game kecil dengan grafis pixel art bergaya abad pertengahan dan komponen RPG klasik.<br><br>Ini adalah RPG incremental dengan elemen MMO sebagai intinya.<br><br>Yang perlu kamu lakukan hanyalah melangkah dengan satu klik tombol!</p></div>`
+   +`<div class=tlist>`+L.map(([n,i,d])=>`<button onclick="alert(DECODE('${encodeURIComponent(n+"\n\n"+d)}'))"><span><i class="fa-solid ${i}" style="margin:0"></i></span>${n}</button>`).join("")+`</div>`
+   +`<div class=tlist><button onclick="toast('Road map segera hadir')"><span>🗺️</span>StepQuest Road Map<i class="fa-solid fa-caret-right"></i></button></div>`
+   +`<div class=card2><ul class=credits><li>Data item, avatar & sprite: <a href="https://smmo-db.com" target=_blank rel=noopener>smmo-db.com</a> / SimpleMMO (© Mike Grim / SimpleMMO)</li><li>Icons by Font Awesome</li><li>Font: Inter (Google Fonts)</li><li>Dibuat untuk komunitas — bukan produk resmi SimpleMMO</li></ul></div>`;
  }else if(type==="events"){
   t.textContent="Events";
   h=`<div class="banner ev"><h1>Events</h1><p>StepQuest mengadakan banyak event yang bisa kamu ikuti. Cek daftar event mendatang di bawah!</p></div><div class=tlist><button onclick="toast('Belum dimulai')"><span>🎃</span>Halloween 2026<em>Mon Oct 19 2026</em></button><button onclick="toast('Belum dimulai')"><span>🎄</span>Winter Holidays 2026<em>Mon Dec 14 2026</em></button></div>`;
@@ -509,7 +534,7 @@ function potLeft(k){const l=(s.pa[k]||0)-Date.now();return l>0?`${Math.floor(l/6
 function usePot(k){if(s.pots[k]<1)return toast("Potion habis");s.pots[k]--;s.pa[k]=Math.max(Date.now(),s.pa[k]||0)+(k==="exp"?5:15)*60000;save();toast(k==="exp"?"+5% Experience aktif":"+5% Rarity Rate aktif");openPanel("potions")}
 function renameChar(){const n=prompt("Username baru:",s.name);if(n&&n.trim()){s.name=n.trim();save();toast("Nama diganti")}}
 function createGuild(){if(!SOCK)return toast("Tidak terhubung ke server");if(s.gold<5000)return toast("Butuh 5,000 gold");const n=(prompt("Nama guild:")||"").trim();if(!n)return;if(NET.guilds.some(g=>g.name===n))return toast("Nama guild sudah dipakai");const tag=(prompt("Tag guild (maks 5 huruf):",n.slice(0,3))||"").trim();s.gold-=5000;s.guild=n;SOCK.emit("guild:create",{name:n,tag});save();toast("🛡️ Guild dibuat!");openPanel("guilds")}
-function joinGuild(n){if(!SOCK)return;if(s.guild===n)return toast("Sudah bergabung");s.guild=n;SOCK.emit("guild:join",n);save();toast("Bergabung dengan "+n);openPanel("guilds")}
+function joinGuild(n){if(!SOCK)return;if(s.guild===n)return toast("Sudah bergabung");s.guild=n;SOCK.emit("guild:join",n);addNote("Guild","Kamu bergabung dengan guild "+esc(n));save();toast("Bergabung dengan "+n);openPanel("guilds")}
 function guildLeave(){if(SOCK)SOCK.emit("guild:leave");s.guild="";save();openPanel("guilds")}
 let ttab=0,cq=1;
 const TREW={daily:[600,"Bronze",5],weekly:[1800,"Silver",15],monthly:[2520,"Gold",35]};
@@ -524,13 +549,25 @@ function claimTask(P,i){const T=s.tk[P];if(T.got.includes(i))return;T.got.push(i
 function claimChest(P){s.tk[P].chest=1;s.dia=(s.dia||0)+TREW[P][2];save();toast(`💎 +${TREW[P][2]} diamonds`);openPanel("tasks")}
 function taskTab(i){ttab=i;openPanel("tasks")}
 function untilTxt(t){let x=Math.max(0,Math.floor((t-Date.now())/1000));const d=Math.floor(x/86400),h=Math.floor(x%86400/3600),m=Math.floor(x%3600/60),sec=x%60;return `${d} days, ${h} hours, ${m} minutes, and ${sec} seconds`}
-function commonMats(){return s.inv.filter(n=>ITEMS[n]&&ITEMS[n][1]==="mat"&&ITEMS[n][0]===0).length}
+// [nama, ikon, level crafting, rarity material, material per item, hasil]
+const CTYPES=[["Common Item","🦐",1,0,15,0],["Uncommon Item","👑",3,1,15,1],["Rare Item","📿",5,2,15,2],["Elite Item","🦺",10,3,15,3],["Epic Item","🛡️",20,4,15,4],["Legendary Item","🗡️",30,5,15,5],["Celestial and Exotic Item","⚔️",50,6,15,6],["Diamonds","💎",20,3,10,"dia"],["Bronze Keys","🗝️",10,1,15,"Bronze"],["Silver Keys","🔑",25,2,15,"Silver"]];
+const MATN=["Common Material","Uncommon Material","Rare Material","Elite Material","Epic Material","Legendary Material","Solomon","Solomon"];
+let ct=0;
+const isMat=(n,r)=>n!=="Mushroom of Energy"&&ITEMS[n]&&ITEMS[n][1]==="mat"&&(r>=6?ITEMS[n][0]>=6:ITEMS[n][0]===r);
+function matCount(r){return s.inv.filter(n=>isMat(n,r)).length}
+function commonMats(){return matCount(0)}
 function doCraft(){
- const need=15*cq;if(commonMats()<need)return toast("Material kurang");if(s.energy<cq)return toast("⚡ Energy tidak cukup");
- let r=need;s.inv=s.inv.filter(n=>{if(r>0&&ITEMS[n]&&ITEMS[n][1]==="mat"&&ITEMS[n][0]===0){r--;return false}return true});
- const pool=Object.keys(ITEMS).filter(k=>ITEMS[k][0]===0&&!["mat","potion"].includes(ITEMS[k][1])),got=[];
- for(let i=0;i<cq;i++){const n=pool[rand(0,pool.length-1)];s.inv.push(n);got.push(n)}
- s.energy-=cq;s.cr=(s.cr||0)+cq;s.craft[1]+=15*cq;while(s.craft[1]>=50*s.craft[0]){s.craft[1]-=50*s.craft[0];s.craft[0]++}addXP(cq*s.level*5);
+ const T=CTYPES[ct],need=T[4]*cq;
+ if(s.craft[0]<T[2])return toast(`🔒 Crafting level ${T[2]} required`);
+ if(matCount(T[3])<need)return toast("Material kurang");if(s.energy<cq)return toast("⚡ Energy tidak cukup");
+ let r=need;s.inv=s.inv.filter(n=>{if(r>0&&isMat(n,T[3])){r--;return false}return true});
+ const got=[];
+ for(let i=0;i<cq;i++){
+  if(T[5]==="dia"){s.dia=(s.dia||0)+1;got.push("💎 Diamond")}
+  else if(typeof T[5]==="string"){s.keys=s.keys||{};s.keys[T[5]]=(s.keys[T[5]]||0)+1;got.push(T[5]+" Key")}
+  else{const rr=T[5]===6&&chance(.2)?7:T[5],pool=Object.keys(ITEMS).filter(k=>ITEMS[k][0]===rr&&GEAR_T.includes(ITEMS[k][1])&&ilv(k)<=Math.max(10,s.level+10));const pl=pool.length?pool:Object.keys(ITEMS).filter(k=>ITEMS[k][0]===rr&&GEAR_T.includes(ITEMS[k][1]));const n=pl[rand(0,pl.length-1)];s.inv.push(n);got.push(n)}
+ }
+ const cx=(T[2]*5+15)*cq;s.energy-=cq;s.cr=(s.cr||0)+cq;s.craft[1]+=cx;while(s.craft[1]>=50*s.craft[0]){s.craft[1]-=50*s.craft[0];s.craft[0]++;toast("🔨 Crafting level "+s.craft[0])}addXP(cq*s.level*5);
  save();toast("🔨 Crafted: "+got.join(", "));openPanel("craft");
 }
 const PROFS=[["Blacksmith","🔥","Strength"],["Thief","🥷","Dexterity"],["Chef","🍖","Dexterity"],["Guard","🗡️","Defence"],["Banker","💰","Defence"],["Warrior","⚔️","Strength"],["Defender","🛡️","Defence"],["Rogue","🟣","Dexterity"]];
@@ -555,7 +592,67 @@ const AWP={"Baby Steps":[s=>s.steps,100],"Butcher":[s=>s.kills,10],"Checkbox":[s
 function dBuy(c,fn){s.dia=s.dia||0;if(s.dia<c)return toast(`💎 Butuh ${c} diamonds`);s.dia-=c;fn();save();openPanel("diamond")}
 const DSHOP=[["Animated Avatar","🐉",200,"dBuy(200,()=>toast('Avatar animasi aktif!'))"],["Item Rename","🏷️",25,"dBuy(25,()=>toast('Pilih item di inventory untuk rename'))"],["Gold Key","🗝️",4,"dBuy(4,()=>{s.keys=s.keys||{};s.keys.Gold=(s.keys.Gold||0)+1;toast('+1 Gold Key')})"],["Increase max quest points","✨",40,"toast('Segera hadir')"],["Gradient username","🪶",150,"dBuy(150,()=>{s.nc='grad';toast('Username gradient aktif')})","#2dd4bf"],["Change item into celestial","🪽",50,"toast('Segera hadir')"],["Refill Quest Points","💎",4,"dBuy(4,()=>{s.qe=50;toast('Quest Points penuh')})"],["Refill Energy Points","⚡",5,"dBuy(5,()=>{s.energy=100;toast('Energy penuh')})"],
  ["Custom Item Sprite","⚒️",75,"toast('Segera hadir')"],["Static Avatar","🧝",150,"toast('Segera hadir')"],["Username Change","📜",10,"dBuy(10,renameChar)"],["Item Inscription","📜",20,"toast('Segera hadir')"],["Coloured username","🖋️",100,"dBuy(100,()=>{s.nc='green';toast('Username berwarna aktif')})","#22c55e"],["Refill your HP","💗",4,"dBuy(4,()=>{s.hp=s.maxHp;toast('HP penuh')})"],["Reset Skills","🏆",15,"dBuy(15,()=>{const p=s.str+s.def+s.dex-20;s.str=10;s.def=5;s.dex=5;s.pts+=p;toast('Stat direset: +'+p+' poin')})"],["Library Book","📕",35,"dBuy(35,()=>{addXP(nextXP());toast('📕 +1 level EXP')})"]];
-let mt=0;
+let CHAT={},chatC="Global";
+function toggleChat(){const p=document.getElementById("chatPanel"),b=document.getElementById("chatBack");const o=p.classList.toggle("hidden");b.classList.toggle("hidden",o);if(!o){renderChat();setTimeout(()=>document.getElementById("chatTxt").focus(),50)}}
+function chatCh(c){chatC=c;document.querySelectorAll(".chat-tabs button").forEach(b=>b.classList.toggle("act",b.dataset.ch===c));renderChat()}
+function renderChat(){const el=document.getElementById("chatList");if(!el)return;const L=CHAT[chatC]||[];el.innerHTML=!SOCK?`<p class=hint>Tidak terhubung ke server.</p>`:L.length?L.map(m=>`<div class=cm><span class=cav>${avImg(m.av)}</span><div class=cb><div><b style="color:${m.mod?"#f5c518":"#ffd866"}">${esc(m.name)}</b>${m.mod?` <span class=modb>🛡️ Mod</span>`:""} <small>${new Date(m.t).toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"})}</small></div><div>${esc(m.txt)}</div></div></div>`).join(""):`<p class=hint>Belum ada pesan di ${chatC}. Sapa pemain lain!</p>`;el.scrollTop=el.scrollHeight}
+function chatSend(){const i=document.getElementById("chatTxt"),v=i.value.trim();if(!v||!SOCK)return;SOCK.emit("chat:send",{ch:chatC,txt:v,key:isAdmin?AKEY():""});i.value=""}
+let mt=0,nf=0,atab=0,aq="",art=-1,aty="",aqty=1;
+function admTab(i){atab=i;openPanel("admin")}
+const AKEY=()=>sessionStorage.getItem("sq_akey")||"";
+function admSet(k,v){v=Math.max(0,Math.round(+v||0));s[k]=v;if(k==="maxHp")s.hp=Math.min(s.hp,v);save();toast(`✅ ${k} = ${v.toLocaleString()}`);openPanel("admin")}
+function admLevel(v){v=Math.max(1,Math.round(+v||1));s.level=v;s.xp=0;s.maxHp=100+(v-1)*10;s.hp=s.maxHp;save();toast("✅ Level "+v);openPanel("admin")}
+function admGive(n,q=1){if(!ITEMS[n])return;for(let i=0;i<q;i++)s.inv.push(n);save();toast(`🎁 +${q} ${n}`)}
+function admRand(r,q=1){const got=[];for(let i=0;i<q;i++){const p=Object.keys(ITEMS).filter(k=>ITEMS[k][0]==r&&GEAR_T.includes(ITEMS[k][1]));const n=p[rand(0,p.length-1)];s.inv.push(n);got.push(n)}save();toast("🎁 "+got.join(", "))}
+function admKeys(k,q){s.keys=s.keys||{};s.keys[k]=(s.keys[k]||0)+q;save();toast(`🗝️ +${q} ${k} Key`);openPanel("admin")}
+function admSpawn(i){closePanel();if(i<0)spawn(BOSS,true);else spawn(enemies[i]);eventText(`🛡️ Admin spawn: ${enemy.name}`);save()}
+function admEquipBest(){GEAR_T.forEach(t=>{const c=Object.keys(ITEMS).filter(k=>ITEMS[k][1]===t&&ilv(k)<=s.level).sort((a,b)=>ITEMS[b][2]-ITEMS[a][2])[0];if(c)s.eq[t]=c});save();toast("🛡️ Equip item terbaik sesuai level");openPanel("admin")}
+function admSrv(cmd,args){if(!SOCK)return toast("Tidak terhubung ke server");SOCK.emit("admin",{key:AKEY(),cmd,args},r=>{toast(r&&r.ok?"✅ "+(r.msg||"OK"):"❌ "+(r&&r.msg||"Gagal"));if(r&&r.data)ADM=r.data;openPanel("admin")})}
+let ADM=null;
+const inp=(id,v,ph="")=>`<input id="${id}" class=ain type=number value="${v}" placeholder="${ph}">`;
+const row2=(l,id,v,fn)=>`<div class=arow><span>${l}</span>${inp(id,v)}<button class=mini onclick="${fn}(document.getElementById('${id}').value)">Set</button></div>`;
+function admPlayer(){
+ return `<div class=tsec>Currencies</div><div class=card2>${row2("🪙 Gold","a_g",s.gold,"admSetGold")}${row2("🏦 Bank","a_b",s.bank,"admSetBank")}${row2("💎 Diamonds","a_d",s.dia||0,"admSetDia")}</div>`
+ +`<div class=tsec>Level & Stats</div><div class=card2>${row2("✨ Level","a_l",s.level,"admLevel")}${row2("💪 Strength","a_s",s.str,"admSetStr")}${row2("🛡️ Defence","a_df",s.def,"admSetDef")}${row2("💨 Dexterity","a_dx",s.dex,"admSetDex")}${row2("❤️ Max HP","a_hp",s.maxHp,"admSetHp")}${row2("⭐ Stat Points","a_p",s.pts,"admSetPts")}</div>`
+ +`<div class=tsec>Quick Actions</div><div class=agrid>`
+ +[["❤️ Full Heal","s.hp=s.maxHp"],["⚡ Full Energy","s.energy=100"],["🔥 Full Quest Pts","s.qe=50"],["💰 +100k Gold","addGold(100000)"],["💰 +10M Gold","addGold(10000000)"],["💎 +1,000 Diamonds","s.dia=(s.dia||0)+1000"],["⬆️ +1 Level","addXP(nextXP())"],["⬆️ +10 Level","for(let i=0;i<10;i++)addXP(nextXP())"],["🚀 Level 100","admLevel(100)"],["💪 +1000 semua stat","s.str+=1000;s.def+=1000;s.dex+=1000"],["🧪 +10 Potion EXP/Rar","s.pots.exp+=10;s.pots.rar+=10"],["💀 HP = 1","s.hp=1"]].map(([l,c])=>`<button class=btn-admin onclick="${c};save();toast('${l}');openPanel('admin')">${l}</button>`).join("")
+ +`<button class=btn-admin style="background:${s.god?"#1fa971":"#3a3a4e"}" onclick="s.god=!s.god;save();openPanel('admin')">🛡️ God Mode: ${s.god?"ON":"OFF"}</button><button class=btn-admin style="background:${s.fast?"#1fa971":"#3a3a4e"}" onclick="s.fast=!s.fast;save();openPanel('admin')">⏩ Instant Step: ${s.fast?"ON":"OFF"}</button></div>`
+ +`<div class=tsec>Skills & Profession</div><div class=card2>${Object.keys(s.sk).map(k=>row2(NODES[k].icon+" "+k,"a_sk_"+k,s.sk[k][0],"admSk_"+k)).join("")}${row2("🔨 Crafting","a_cr",s.craft[0],"admSetCraft")}${row2("💼 "+profS().cur,"a_pf",profS().lv[profS().cur][0],"admSetProf")}</div>`;
+}
+function admSetGold(v){admSet("gold",v)}function admSetBank(v){admSet("bank",v)}function admSetDia(v){admSet("dia",v)}function admSetStr(v){admSet("str",v)}function admSetDef(v){admSet("def",v)}function admSetDex(v){admSet("dex",v)}function admSetHp(v){admSet("maxHp",v);s.hp=s.maxHp;save()}function admSetPts(v){admSet("pts",v)}
+function admSetCraft(v){s.craft=[Math.max(1,+v||1),0];save();openPanel("admin")}
+function admSetProf(v){const P=profS();P.lv[P.cur]=[Math.max(1,+v||1),0];save();openPanel("admin")}
+["Mining","Woodcutting","Fishing","Treasure"].forEach(k=>{window["admSk_"+k]=v=>{s.sk[k]=[Math.max(1,+v||1),0];save();openPanel("admin")}});
+function admItems(){
+ const types=[...new Set(Object.values(ITEMS).map(x=>x[1]))];
+ const L=Object.keys(ITEMS).filter(k=>(!aq||k.toLowerCase().includes(aq.toLowerCase()))&&(art<0||ITEMS[k][0]===art)&&(!aty||ITEMS[k][1]===aty)).sort((a,b)=>ITEMS[b][0]-ITEMS[a][0]||ilv(b)-ilv(a));
+ return `<div class=card2><input class=ain style="width:100%" placeholder="Cari item (${Object.keys(ITEMS).length} item)…" value="${esc(aq)}" onchange="aq=this.value;openPanel('admin')"><div class=arow style="margin-top:8px"><select class=sel onchange="art=+this.value;openPanel('admin')"><option value=-1>Semua rarity</option>${RAR.map((r,i)=>`<option value=${i} ${art===i?"selected":""}>${r[0]}</option>`).join("")}</select><select class=sel onchange="aty=this.value;openPanel('admin')"><option value="">Semua tipe</option>${types.map(x=>`<option ${aty===x?"selected":""}>${x}</option>`).join("")}</select><input class=ain type=number min=1 value=${aqty} style="width:70px" onchange="aqty=Math.max(1,+this.value||1)" title="Qty"></div></div>`
+ +`<p class=hint>${L.length} hasil · klik Give untuk memberi ${aqty}x</p>`+L.slice(0,60).map(n=>`<div class=loot><span class=lr>${ico(n,"lg")}<span>${nmT(n)}<br><small>${ITEMS[n][1]} · Lv ${ilv(n).toLocaleString()} · +${ITEMS[n][2].toLocaleString()}${exTxt(n)}</small></span></span><button class=mini onclick="admGive(DECODE('${encodeURIComponent(n)}'),aqty)">Give</button></div>`).join("")
+ +`<div class=tsec>Random by rarity</div><div class=agrid>${RAR.map((r,i)=>`<button class=btn-admin style="background:#23252a;border:1px solid ${r[1]};color:${r[1]}" onclick="admRand(${i},aqty)">${r[0]}</button>`).join("")}</div>`
+ +`<div class=tsec>Keys, Tools & Materials</div><div class=agrid>${["Bronze","Silver","Gold"].map(k=>`<button class=btn-admin onclick="admKeys('${k}',10)">🗝️ +10 ${k} (${(s.keys||{})[k]||0})</button>`).join("")}<button class=btn-admin onclick="Object.keys(TOOLK).forEach(t=>s.tools[t]=1);save();toast('🔧 Semua tool');openPanel('admin')">🔧 Semua Tool</button>${MATN.slice(0,6).map((m,i)=>`<button class=btn-admin onclick="admGive('${m}',50)">${RAR[i][0]} Mat ×50</button>`).join("")}<button class=btn-admin onclick="admGive('Mushroom of Energy',20)">🍄 Mushroom ×20</button><button class=btn-admin onclick="admGive('Healing Herb',20)">🌿 Herb ×20</button><button class=btn-admin onclick="admEquipBest()">🛡️ Equip terbaik</button><button class=btn-admin style="background:#7a1f1f" onclick="if(confirm('Kosongkan inventory?')){s.inv=[];save();openPanel('admin')}">🗑️ Clear Inventory</button><button class=btn-admin style="background:#7a1f1f" onclick="Object.keys(s.eq).forEach(k=>s.eq[k]=null);save();openPanel('admin')">❎ Unequip semua</button></div>`;
+}
+function admWorld(){
+ return `<div class=tsec>Teleport</div><div class=agrid>${LOCS.map((l,i)=>`<button class=btn-admin style="background:${i===s.loc?"#4f46e5":"#3a3a4e"}" onclick="s.loc=${i};s.vis[${i}]=1;save();toast('📍 ${l[0]}');openPanel('admin')">📍 ${l[0]}</button>`).join("")}</div>`
+ +`<div class=tsec>Spawn Enemy</div><div class=agrid>${enemies.map((e,i)=>`<button class=btn-admin onclick="admSpawn(${i})">${e.ico} ${e.name}</button>`).join("")}<button class=btn-admin style="background:#7a1f1f" onclick="admSpawn(-1)">🐉 World Boss</button></div>`
+ +`<div class=tsec>Battle Arena</div><div class=agrid><button class=btn-admin onclick="s.ap[s.au]=ARENA[s.au][2]-1;save();toast('1 NPC lagi untuk tier ini');openPanel('admin')">🏁 Hampir selesai tier</button><button class=btn-admin onclick="s.au=10;ARENA.forEach((a,i)=>s.ap[i]=a[2]);save();toast('Semua tier terbuka');openPanel('admin')">🔓 Buka semua tier</button><button class=btn-admin onclick="s.au=0;s.ap=[];save();openPanel('admin')">↺ Reset arena</button></div>`
+ +`<div class=tsec>Quests, Tasks & Awards</div><div class=agrid><button class=btn-admin onclick="QUESTS.forEach((q,i)=>s.qd[i]=q[3]);s.qc=QUESTS.length;save();toast('Semua quest selesai');openPanel('admin')">✅ Selesaikan semua quest</button><button class=btn-admin onclick="s.qd={};s.qc=0;save();openPanel('admin')">↺ Reset quest</button><button class=btn-admin onclick="s.tk={};save();toast('Tasks direset');openPanel('admin')">↺ Reset tasks</button><button class=btn-admin onclick="AWARDS.forEach(a=>s.aw[a[0]]=Date.now());save();toast('Semua award');openPanel('admin')">🏅 Unlock semua award</button><button class=btn-admin onclick="s.aw={};save();openPanel('admin')">↺ Reset award</button><button class=btn-admin onclick="s.rw={};save();toast('Daily/Monthly reward bisa diklaim lagi');openPanel('admin')">🎁 Reset daily reward</button><button class=btn-admin onclick="sprintUntil=Date.now()+3600000;sprintTick();toast('Sprint 60 menit')">🏃 Sprint 60 menit</button><button class=btn-admin onclick="s.pa.exp=s.pa.rar=Date.now()+3600000;save();toast('Boost EXP & Rarity 1 jam')">🧪 Boost 1 jam</button></div>`
+ +`<div class=tsec>Avatar</div><div class=agrid><button class=btn-admin onclick="openPanel('avatars')">🧙 Ganti avatar</button><button class=btn-admin onclick="s.av=rand(0,AVATARS.length-1);save();openPanel('admin')">🎲 Avatar acak</button></div>`;
+}
+function admSave(){
+ return `<div class=tsec>Export / Import Save</div><div class=card2><textarea id=a_json class=ain style="width:100%;height:160px;font-family:monospace;font-size:11px">${esc(JSON.stringify(s))}</textarea><div class=agrid style="margin-top:8px"><button class=btn-admin onclick="navigator.clipboard&&navigator.clipboard.writeText(document.getElementById('a_json').value);toast('Disalin')">📋 Copy</button><button class=btn-admin onclick="try{const j=JSON.parse(document.getElementById('a_json').value);s=Object.assign(def(),j);save();toast('✅ Save diimpor');openPanel('admin')}catch(e){toast('❌ JSON tidak valid')}">📥 Import</button></div></div>`
+ +`<div class=tsec>Bahaya</div><div class=agrid><button class=btn-admin style="background:#7a1f1f" onclick="if(confirm('Reset karakter admin ke awal?')){const n=s.name;s=def();s.name=n;save();openPanel('admin')}">💣 Reset karakter</button><button class=btn-admin style="background:#7a1f1f" onclick="if(confirm('Hapus SEMUA save di browser ini?')){Object.keys(localStorage).filter(k=>k.startsWith(KEY)).forEach(k=>localStorage.removeItem(k));doLogout()}">🧨 Hapus semua save lokal</button></div>`;
+}
+function admServer(){
+ const on=NET.online.filter(p=>p.id!==myId);
+ return (AKEY()?"":`<div class="warn" style="margin:0 0 10px">⚠️ Perintah server butuh password admin. Logout lalu login lagi sebagai <b>admin</b> dengan password admin server (env <code>ADMIN_PASSWORD</code>).</div>`)
+ +`<div class=tsec>Announcement</div><div class=card2><div class=arow><input id=a_ann class=ain style="flex:1" placeholder="Pesan untuk semua pemain online"><button class=mini onclick="admSrv('announce',{txt:document.getElementById('a_ann').value})">Kirim</button></div></div>`
+ +`<div class=tsec>Pemain Online (${on.length})</div>`+(on.length?on.map(p=>`<div class=loot><span class=lr>${avImg(p.av)}<span><b>${esc(p.name)}</b><br><small>Lv ${p.level} · 🪙 ${p.gold.toLocaleString()}</small></span></span><span><button class=mini onclick="admSrv('gift',{id:'${p.id}',gold:+prompt('Gold?','10000')||0,dia:+prompt('Diamonds?','0')||0})">🎁</button><button class="mini alt" onclick="if(confirm('Kick ${esc(p.name)}?'))admSrv('kick',{id:'${p.id}'})">Kick</button></span></div>`).join(""):`<p class=hint>Tidak ada pemain lain online.</p>`)
+ +`<div class=tsec>Market & Guild</div><div class=agrid><button class=btn-admin onclick="admSrv('stats')">📊 Statistik server</button><button class=btn-admin style="background:#7a1f1f" onclick="if(confirm('Hapus semua listing market?'))admSrv('clearMarket')">🧹 Clear market (${NET.listings.length})</button><button class=btn-admin style="background:#7a1f1f" onclick="if(confirm('Hapus semua chat?'))admSrv('clearChat')">🧹 Clear chat</button></div>`
+ +(NET.guilds.length?NET.guilds.map(g=>`<div class=loot><span><b>${esc(g.name)}</b> [${esc(g.tag)}]<br><small>${g.members} members · owner ${esc(g.owner)}</small></span><button class="mini alt" onclick="if(confirm('Hapus guild?'))admSrv('delGuild',{name:DECODE('${encodeURIComponent(g.name)}')})">Hapus</button></div>`).join(""):"")
+ +(ADM?`<div class=card2><b>📊 Server</b>${Object.entries(ADM).map(([k,v])=>`<div class=srow><span>${k}</span><b>${v}</b></div>`).join("")}</div>`:"");
+}
+const NCAT=["All","Action","Market","PvP","Player Interaction","Guild","System","Other"];
+function addNote(cat,txt){if(!s)return;s.notes=s.notes||[];s.notes.unshift([cat,txt,Date.now()]);s.notes.length=Math.min(s.notes.length,100);s.nu=(s.nu||0)+1;save()}
 const DECODE=decodeURIComponent;
 function mBuy(id){const l=NET.listings.find(x=>x.id===id);if(!l)return;if(s.gold<l.price)return toast("❌ Gold tidak cukup!");SOCK.emit("market:buy",id,r=>{if(!r||!r.ok)return toast("Listing sudah terjual");s.gold-=l.price;s.inv.push(l.item);s.buys=(s.buys||0)+1;save();toast("🤝 Dibeli: "+l.item);openPanel("market")})}
 function mSell(n){const i=s.inv.indexOf(n);if(i<0)return;const v=parseInt(prompt(`Harga jual ${n}?`,Math.round(ITEMS[n][3]*1.2)));if(!v||v<1)return;s.inv.splice(i,1);SOCK.emit("market:list",{item:n,price:v});save();toast("📦 Dipasang di market");openPanel("market")}
@@ -569,15 +666,19 @@ function prof(){return {name:s.name,level:s.level,str:atk(),def:dfn(),dex:dexT()
 function netUpd(){if(!SOCK||!SOCK.connected)return;clearTimeout(netT);netT=setTimeout(()=>SOCK.emit("update",prof()),800)}
 function myParty(){return NET.parties.find(p=>p.members.some(m=>m.id===myId))}
 function partyCreate(){if(!SOCK)return toast("Tidak terhubung ke server");const n=prompt("Nama party:",s.name+"'s party");if(n===null)return;SOCK.emit("party:create",n)}
-function partyJoin(id){SOCK.emit("party:join",id)}
+function partyJoin(id){SOCK.emit("party:join",id);const p=NET.parties.find(x=>x.id===id);addNote("Player Interaction","Kamu bergabung dengan party "+esc(p?p.name:""))}
 function partyLeave(){SOCK.emit("party:leave");toast("Keluar dari party")}
 function netInit(){
  if(typeof io==="undefined"||SOCK)return;
  SOCK=io();
- SOCK.on("connect",()=>{myId=SOCK.id;SOCK.emit("hello",prof())});
+ SOCK.on("connect",()=>{myId=SOCK.id;SOCK.emit("hello",prof());SOCK.emit("chat:history",h=>{CHAT=h||{};renderChat()})});
+ SOCK.on("chat:msg",m=>{(CHAT[m.ch]=CHAT[m.ch]||[]).push(m);if(CHAT[m.ch].length>60)CHAT[m.ch].shift();if(m.ch===chatC)renderChat()});
+ SOCK.on("announce",a=>{addNote("System",`📢 ${esc(a.txt)}`);toast("📢 "+a.txt)});
+ SOCK.on("admin:gift",g=>{if(g.gold)addGold(g.gold);if(g.dia)s.dia=(s.dia||0)+g.dia;(g.items||[]).forEach(i=>ITEMS[i]&&s.inv.push(i));addNote("System",`🎁 Admin memberimu ${g.gold?"🪙 "+g.gold.toLocaleString()+" ":""}${g.dia?"💎 "+g.dia+" ":""}${(g.items||[]).join(", ")}`);save();toast("🎁 Hadiah dari admin!")});
+ SOCK.on("admin:kicked",()=>{alert("Kamu di-kick oleh admin.");doLogout()});
  SOCK.on("state",st=>{NET=st;const b=document.getElementById("onlineN");if(b)b.textContent=st.online.length;if(!document.getElementById("modal").classList.contains("hidden")&&["party","myparty","online","pvp","market","allguilds"].includes(lastPanel))openPanel(lastPanel)});
- SOCK.on("credit",c=>{if(c.gold)addGold(c.gold);(c.items||[]).forEach(i=>ITEMS[i]&&s.inv.push(i));save();toast(`💰 ${c.note||"Market"}${c.gold?" +"+c.gold.toLocaleString()+"G":""}`)});
- SOCK.on("pvp:attacked",({by,won,gold})=>{if(won){const l=Math.min(s.gold,gold);s.gold-=l;eventText(`⚔️ ${esc(by)} menyerangmu dan menang! -${l.toLocaleString()} Gold`)}else eventText(`🛡️ ${esc(by)} menyerangmu tapi kalah!`);save();toast(`⚔️ Diserang oleh ${by}`)});
+ SOCK.on("credit",c=>{addNote("Market",`${esc(c.note||"Market")}${c.gold?" — kamu menerima 🪙 "+c.gold.toLocaleString():""}`);if(c.gold)addGold(c.gold);(c.items||[]).forEach(i=>ITEMS[i]&&s.inv.push(i));save();toast(`💰 ${c.note||"Market"}${c.gold?" +"+c.gold.toLocaleString()+"G":""}`)});
+ SOCK.on("pvp:attacked",({by,won,gold})=>{addNote("PvP",won?`${esc(by)} menyerangmu dan menang, mencuri 🪙 ${Math.min(s.gold,gold).toLocaleString()}.`:`${esc(by)} menyerangmu tapi kalah.`);if(won){const l=Math.min(s.gold,gold);s.gold-=l;eventText(`⚔️ ${esc(by)} menyerangmu dan menang! -${l.toLocaleString()} Gold`)}else eventText(`🛡️ ${esc(by)} menyerangmu tapi kalah!`);save();toast(`⚔️ Diserang oleh ${by}`)});
 }
 function pvpFight(id){
  const p=NET.online.find(x=>x.id===id);closePanel();
@@ -586,11 +687,11 @@ function pvpFight(id){
  enemy={ico:avImg(p.av).replace('class="iti"','class="avi big"'),name:p.name,level:p.level,hp:Math.max(50,p.maxHp),maxHp:Math.max(50,p.maxHp),attack:Math.max(3,Math.round(p.str*.6)),def:p.def,gold:[0,0],xp:[p.level*8,p.level*16],drop:[],m:1,pvp:id,steal:Math.floor(p.gold*.05)};
  save();openPanel("battle");
 }
-function closePanel(){const m=document.getElementById("modal");m.classList.add("hidden");m.classList.remove("full","page")}
+function closePanel(){if(PAGE){if(lastPanel===PAGE)return void(location.href="index.html");return openPanel(PAGE)}const m=document.getElementById("modal");m.classList.add("hidden");m.classList.remove("full","page")}
 
 // MENU SAMPING (hamburger)
 function toggleMenu(){document.getElementById("sideMenu").classList.toggle("open");document.getElementById("sideBackdrop").classList.toggle("open")}
-function menuGo(p){toggleMenu();openPanel(p)}
+function menuGo(p){toggleMenu();navGo(p)}
 
 // ===== DATA DARI smmo-wiki.com =====
 let sprintUntil=0;
@@ -632,10 +733,15 @@ function arenaFight(i){
  if(s.gold<c)return toast("❌ Gold tidak cukup!");
  s.energy--;s.gold-=c;const p=pool();spawn(p[rand(0,p.length-1)]);enemy.arena=i+1;save();
 }
+const ARENA_ICO=["⚔️","🥉","🥈","🥇","💠","☠️","⛧","🔮","🌋","☄️","✴️"];
+function arenaDia(i){return 2*(i+1)}
+function openArenaReward(){const i=s.au,a=ARENA[i];document.getElementById("modalTitle").textContent="";
+ document.getElementById("modalBody").innerHTML=`<div class=gm><div class=gm-ico>${ARENA_ICO[i]}</div><h3 class=qt>${a[0]} Reward</h3><p class=gm-p>Complete the tier and receive the rewards.</p><div class=gm-sec><span>Rewards</span></div><div class=chips><span>🗝️ 1 Gold Key</span><span>💎 ${arenaDia(i)} Diamonds</span><span>🪙 ${(arenaCost(i)*30).toLocaleString()}</span><span>📦 2 Items</span></div></div><button class="fight alt" style="margin-top:16px;background:#111" onclick="openPanel('hub')">Close</button>`;
+ const m=document.getElementById("modal");m.classList.remove("full");m.classList.remove("hidden")}
 function arenaWin(msg){
  const i=enemy.arena-1,a=ARENA[i],x=Math.round(a[1]*nextXP()*.06),lv=addXP(x);
  s.kills++;s.ap[i]=(s.ap[i]||0)+1;let ex="";
- if(i===s.au&&s.ap[i]>=a[2]&&i<10){s.au++;const g=arenaCost(i)*30;addGold(g);s.inv.push(rollItem(),rollItem());ex=` 🎁 ${ARENA[s.au][0]} terbuka! Chest: +${g}G & 2 item`}
+ if(i===s.au&&s.ap[i]>=a[2]&&i<10){s.au++;const g=arenaCost(i)*30,d=arenaDia(i);addGold(g);s.inv.push(rollItem(),rollItem());s.keys=s.keys||{};s.keys.Gold=(s.keys.Gold||0)+1;s.dia=(s.dia||0)+d;ex=` 🎁 ${ARENA[s.au][0]} terbuka! Reward: 1 Gold Key, 💎 ${d}, +${g}G & 2 item`;addNote("Action",`Tier ${a[0]} selesai! +1 Gold Key, 💎 ${d}`)}
  eventText(`${msg}🏟️ ${enemy.name} kalah di ${a[0]}! +${x} XP${lv?" LEVEL UP!":""}.${ex}`);
  showDrop(`+${x} EXP`,"#00ff88");enemy=null;save();renderAction();closePanel();
 }
@@ -646,7 +752,7 @@ function doQuest(i){
  if(chance(Math.min(1,dexT()/q[1]))){
   const k=(1+s.level*.25)*(1+.005*s.qc),g=Math.round(q[4]*k),x=Math.round(q[5]*k);
   addGold(g);addXP(x);s.qd[i]=(s.qd[i]||0)+1;
-  if(s.qd[i]===q[3]){s.qc++;toast("🏁 Quest selesai! Bonus quest +0,5%")}else toast(`✅ ${q[6]} +${g}G +${x}XP`);
+  if(s.qd[i]===q[3]){s.qc++;toast("🏁 Quest selesai! Bonus quest +0,5%");addNote("Action",`Quest "${q[2]}" selesai!`)}else toast(`✅ ${q[6]} +${g}G +${x}XP`);
  }else toast("❌ "+q[7]);
  save();openQuest(i);
 }
@@ -701,7 +807,23 @@ function invTab(i){itab=i;openPanel("inventory")}
 function invSort(i){isort=i;openPanel("inventory")}
 function profTab(i){ptab=i;openPanel("profile")}
 function addStat(k){if(s.pts<=0)return;s.pts--;s[k]++;save();openPanel("char")}
-function refillEnergy(){const c=20*s.level;if(s.energy>=100)return toast("Energy penuh");if(s.gold<c)return toast("❌ Gold tidak cukup!");s.gold-=c;s.energy=100;save();openPanel("hub")}
+let rfTab=0,rfN=0,rfM=0;
+function muUsed(){const d=new Date().toDateString();if(!s.mu||s.mu.d!==d)s.mu={d,n:0};return s.mu.n}
+function openRefill(){
+ const miss=100-s.energy,cost=Math.ceil(rfN/5),mush=s.inv.filter(x=>x==="Mushroom of Energy").length,used=muUsed();
+ document.getElementById("modalTitle").textContent="";
+ document.getElementById("modalBody").innerHTML=`<div class="poh" style="justify-content:space-between">⚡ <b style="flex:1">Refill Energy Points</b><span class=chips><span>💎 ${(s.dia||0).toLocaleString()} Available</span></span></div>`
+  +`<div class=qf>${["Diamonds","Mushroom of Energy","Gold"].map((x,i)=>`<button class="${i===rfTab?"sel":""}" onclick="rfTab=${i};openRefill()">${x}</button>`).join("")}</div>`
+  +(rfTab===0?`<div class=gm-sec><span>How many Energy Points do you wish to refill?</span></div><div class=sp-in><input type=number value=${rfN} min=0 onchange="rfN=Math.max(0,Math.min(${miss},+this.value||0));openRefill()"><button onclick="rfN=Math.max(0,rfN-1);openRefill()">-</button><button onclick="rfN=Math.min(${miss},rfN+1);openRefill()">+</button><button onclick="rfN=${miss};openRefill()">Max</button></div>`
+    +`<div class=gm-sec><span>Tier Breakpoints</span></div><div class=bpg>${[10,25,50,100,200,500,750,1000].map(v=>`<button onclick="rfN=Math.min(${miss},${v});openRefill()">${v.toLocaleString()}</button>`).join("")}</div>`
+    +`<div class=gm-sec><span>Cost</span></div><div class=chips><span>💎 ${cost} Diamonds</span></div><button class=fight style="background:${rfN&&s.dia>=cost?"#4f46e5":"#2a2a6a"};margin-top:16px" onclick="rfBuy()">Purchase Energy Points</button>`
+  :rfTab===1?`<div class=gm-sec><span>Usage (Resets daily)</span></div>${pbar(used,125,"#ff9f43")}<div class=cm-row><span><b style="color:#ff9f43">${used}</b> / 125</span><span>Available <b>${mush}</b></span></div><div class=gm-sec><span>Available Mushrooms of Energy</span></div><button class="fight alt" style="background:#262628" onclick="rfM=Math.min(${mush},${125-used},rfM+1);openRefill()">+1 (pakai ${rfM})</button><button class=fight style="background:${rfM?"#4f46e5":"#2a2a6a"};margin-top:12px" onclick="rfMush()">Use Mushrooms of Energy</button><p class=hint>1 Mushroom = +10 ⚡. Mushroom kadang ditemukan saat melangkah.</p>`
+  :`<p class=gm-p>Isi penuh energy dengan gold.</p><button class=fight style="background:#4f46e5;margin-top:12px" onclick="refillEnergy()">Refill penuh (🪙 ${(20*s.level).toLocaleString()})</button>`)
+  +`<button class="fight alt" style="margin-top:8px;background:#111" onclick="rfN=0;rfM=0;openPanel('hub')">Close</button>`;
+ const m=document.getElementById("modal");m.classList.remove("full");m.classList.remove("hidden")}
+function rfBuy(){const c=Math.ceil(rfN/5);if(!rfN)return;if((s.dia||0)<c)return toast("💎 Diamond tidak cukup");s.dia-=c;s.energy=Math.min(100,s.energy+rfN);toast(`⚡ +${rfN} Energy`);rfN=0;save();openRefill()}
+function rfMush(){if(!rfM)return;for(let i=0;i<rfM;i++)s.inv.splice(s.inv.indexOf("Mushroom of Energy"),1);muUsed();s.mu.n+=rfM;s.energy=Math.min(100,s.energy+rfM*10);toast(`🍄 +${rfM*10} Energy`);rfM=0;save();openRefill()}
+function refillEnergy(){const c=20*s.level;if(s.energy>=100)return toast("Energy penuh");if(s.gold<c)return toast("❌ Gold tidak cukup!");s.gold-=c;s.energy=100;save();toast("⚡ Energy penuh");openRefill()}
 function eqHTML(){
  const row=(n,l)=>n?`<div class=er>${ico(n,"lg")}<div style="flex:1"><b class=dot style="color:${RAR[ITEMS[n][0]][1]}">${n}</b><br><small>+${ITEMS[n][2].toLocaleString()} ${isOff(ITEMS[n][1])?"str":"def"}${exTxt(n)}</small> ${dbLink(n)}</div><span>${l}</span></div>`:`<div class="er dim"><div>Empty ${l} Slot</div></div>`;
  const tl=[["Axe","Wood Axe"],["Fishing Rod","Fishing Rod"],["Pickaxe","Pickaxe"],["Shovel","Shovel"]].map(([k,l])=>s.tools[k]?`<div class=er>${ico(k,"lg")}<div style="flex:1"><b class=dot style="color:#8fb4ff">${k}</b></div><span>${l}</span></div>`:`<div class="er dim"><div>Empty ${l} Slot</div></div>`);
@@ -714,3 +836,6 @@ function itemsHTML(){
   +(u.length?u.map(n=>{const [r,ty,v,p]=ITEMS[n],eq=SLOTS.some(x=>x[0]===ty),cur=eq&&s.eq[ty]?ITEMS[s.eq[ty]][2]:0;
    return `<div class=ir><div class=ir-top>${ico(n,"lg")}<div style="flex:1"><div>x${cnt(n)} <b class=dot style="color:${RAR[r][1]}">${n}</b> <span class=lv>— Level ${ilv(n).toLocaleString()}</span> ${dbLink(n)}</div><div class=ir-sub>🪙 ${p.toLocaleString()}${eq?` · +${v.toLocaleString()} ${isOff(ty)?"str":"def"}${exTxt(n)} ${v>cur?"<i style=color:#2ecc71>▲</i>":v<cur?"<i style=color:#e74c3c>▼</i>":""}`:ty==="potion"?` · +${v} hp`:""}</div></div><span class=ir-slot>${eq?SLOTS.find(x=>x[0]===ty)[1]:ty==="potion"?"Food":ty==="boost"?"Potion":ty==="tool"?"Tool":"Material"}</span></div><div class=ir-act>${eq?`<button class=mini onclick="equip('${n}')">Equip</button>`:ty==="potion"?`<button class=mini onclick="heal(DECODE('${encodeURIComponent(n)}'))">Pakai</button>`:""}<button class="mini alt" onclick="sell('${n}')">Jual</button></div></div>`}).join(""):"<p>Kosong.</p>");
 }
+
+// ===== auto-login (sesi tersimpan) untuk semua halaman =====
+(function(){const u=localStorage.getItem("sq_user");if(u)doLogin(u);else if(PAGE)location.href="index.html"})();

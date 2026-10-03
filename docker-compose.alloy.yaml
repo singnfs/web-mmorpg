@@ -8,4 +8,5 @@ services:
     environment:
       PORT: 3000
       IS_ALLOY: ${IS_ALLOY:-false}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-admin}
     command: bash -lc "npm install && npm start"
