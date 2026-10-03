@@ -274,7 +274,7 @@ function openAdminPanel(){
 
 function openPanel(type){
  const m=document.getElementById("modal"),t=document.getElementById("modalTitle"),b=document.getElementById("modalBody");
- let h="";m.classList.toggle("full",type==="battle");m.classList.toggle("page",["char","profile","hub","inventory","shops","shop","town","loc","settings","party","myparty","leader","lbview","boards","social","events","guilds","allguilds","tasks","craft","collect"].includes(type));
+ let h="";m.classList.toggle("full",type==="battle");m.classList.toggle("page",["char","profile","hub","inventory","shops","shop","town","loc","settings","party","myparty","leader","lbview","boards","social","events","guilds","allguilds","tasks","craft","collect","prof","bank","mahol","chests","support"].includes(type));
  if(type==="stats"){
   t.textContent="";
   const cr=(a,v,m)=>`<div class=cm-row><b>${a}</b><span><b>${v.toLocaleString()}</b> / ${m.toLocaleString()}</span></div>`;
@@ -343,7 +343,7 @@ function openPanel(type){
   t.textContent="Town";
   const L=LOCS[s.loc],sec=(n,r)=>`<div class=tsec>${n}</div><div class=tlist>`+r.map(([a,i,f])=>`<button onclick="${f||"toast('Segera hadir')"}"><span>${i}</span>${a}</button>`).join("")+`</div>`;
   h=`<div class=banner><h1>${L[0]}</h1><p>Kamu berkeliling di kota ${L[0]} dan mendengar obrolan penduduk bergema di telingamu.</p><div class=chips2><button class=mini2 style="background:#4f46e5" onclick="openPanel('loc')">Change Location</button><button class=mini2 onclick="toast('Segera hadir')">View Bulletin Board</button></div></div>`
-   +sec("Market",[["Player Market","🤝"],["Item Shop","🛒","openPanel('shops')"],["Diamond Market","💎"],["Bank","💰"]])+sec("East Side",[["Mahols Hut","⛺"],["Folen the Healer","🧙","healer()"],["Item Dumping Grounds","🦴"]])
+   +sec("Market",[["Player Market","🤝"],["Item Shop","🛒","openPanel('shops')"],["Diamond Market","💎"],["Bank","💰","openPanel('bank')"]])+sec("East Side",[["Mahols Hut","⛺","openPanel('mahol')"],["Folen the Healer","🧙","healer()"],["Item Dumping Grounds","🦴"]])
    +sec("Underground",[["Bounties","🎯"],["Vault","📦"]])+sec("Town Centre",[["Temple","⛪"],["Orphanage","🧸"],["Town Hall","📜"],["Library","📚"]]);
  }else if(type==="quests"){
   t.textContent="Quests";
@@ -418,6 +418,37 @@ function openPanel(type){
   t.textContent="Collections";
   const u=[...new Set(s.inv.concat(Object.values(s.eq).filter(Boolean)))],c=[["Avatars","🧙",1],["Collectables","🔮",u.filter(n=>ITEMS[n]&&ITEMS[n][1]==="mat").length],["Items","🛡️",u.filter(n=>ITEMS[n]&&!["mat","potion"].includes(ITEMS[n][1])).length],["Sprites","🐾",s.party.length],["Backgrounds","🌄",Object.keys(s.vis||{0:1}).length],["Cards","🃏",0],["Events","🎁",0],["NPCs","👹",Object.keys(s.npc||{}).length]];
   h=`<div class=tsec>Your Collection</div><div class=tlist>`+c.map(([n,i,v])=>`<button onclick="toast('${n}: ${v} dikoleksi')"><span>${i}</span>${n}<em>${v}</em></button>`).join("")+`</div>`;
+ }else if(type==="prof"){
+  const P=profS(),c=PROFS.find(x=>x[0]===P.cur),[lv,xp]=P.lv[P.cur],R=ranks(P.cur),ci=R.reduce((a,r,i)=>lv>=r[1]?i:a,0),cr=R[ci],need=profNeed(lv);
+  t.textContent="Profession";
+  const rk=(r,cls)=>`<div class="rk ${cls}"><span class=ri>${r[2]}</span><div style="flex:1"><div class=cm-row style="margin:0"><b>${r[0]}</b><span style="color:#aaa">${cls==="lk"?"Level Required":"Level"} <b style="color:#fff">${r[1].toLocaleString()}</b></span></div><div class=chips style="justify-content:flex-start;margin-top:8px"><span>✨ ${r[3]}/min</span><span>${c[1]} ${r[4]}/min</span><span>🪙 ${r[5]}/min</span></div></div></div>`;
+  h=`<div class="card2 pc"><div class=gm-ico>${c[1]}</div><b style="font-size:18px">${P.cur}</b><div>${cr[0]}</div><div>Level ${lv}</div><button class=fight style="background:#4f46e5;margin-top:14px" onclick="profWork()">Start Working</button><button class="fight alt" style="margin-top:8px;background:#2a2a2d" onclick="openPanel('profpick')">Switch Profession</button></div>`
+   +`<div class=card2><b>Experience</b>${pbar(xp,need,"#4f46e5")}<span><b style="color:#7c7cff">${(need-xp).toLocaleString()}</b> <span style="color:#aaa">EXP needed</span></span></div>`
+   +`<div class=card2><b>Energy Points</b>${pbar(P.ep,5,"#4f46e5")}<div class=cm-row><span><b style="color:#7c7cff">${P.ep}</b>/5</span>${P.ep<5?`<span class=regen>+1 in ${mmss(P.epT+300000-Date.now())}</span>`:""}</div></div>`
+   +`<div class=gm-sec><span>Current Rank</span></div>${rk(cr,"")}`
+   +`<div class=tsec>Unlocked Ranks</div>`+R.filter((r,i)=>i<ci).map(r=>rk(r,"")).join("")
+   +`<div class=tsec>Locked Ranks</div>`+R.filter((r,i)=>i>ci).map(r=>rk(r,"lk")).join("");
+ }else if(type==="profpick"){
+  t.textContent="";const P=profS();
+  h=`<div class=poh>🕒 <b>Professions</b></div><div style="margin-top:10px">`+PROFS.map(([n,i,st])=>`<div class="pr ${pp===n?"sel":""} ${P.cur===n?"cur":""}" onclick="pp='${n}';openPanel('profpick')"><span class=ri>${i}</span><b>${n}</b>${P.cur===n?"":`<em>${{Strength:"🗡️",Defence:"🛡️",Dexterity:"💨"}[st]} ${st}</em>`}</div>`).join("")
+   +`</div><p class=hint>You can change professions without losing your progress.</p><button class=fight style="background:#4f46e5" onclick="pickProf()">Choose Profession</button><button class="fight alt" style="margin-top:8px;background:#111" onclick="openPanel('prof')">Close</button>`;
+ }else if(type==="bank"){
+  t.textContent="Bank";
+  h=`<div class="card2" style="text-align:center;padding:24px"><div style="color:#aaa">Bank Account Balance</div><div class=bal>🪙 ${s.bank.toLocaleString()}</div><small>Gold di tangan: ${s.gold.toLocaleString()}</small></div><div class=tsec>What do you want to do?</div><div class=sortbar><button onclick="bankDo(1)">Deposit</button><button onclick="bankDo(-1)">Withdraw</button></div>`;
+ }else if(type==="mahol"){
+  t.textContent="Mahol's Hut";const k=s.keys||{};
+  h=`<div class="card2 trow"><div style="text-align:center;width:90px"><div style="font-size:52px">🧙‍♂️</div><b>Mahol</b></div><p style="flex:1;line-height:1.5">You come into a hut on the very outskirts of the town. As you enter, Mahol is sitting on the floor in the centre of the room with his eyes closed.<br><br>He opens his eyes, looks at your direction and says "I've been expecting you".</p></div>`
+   +`<div class=tsec>More</div><div class=tlist><button onclick="openPanel('chests')"><span>🧰</span>Chests<em>🗝️ ${(k.Bronze||0)+(k.Silver||0)+(k.Gold||0)}</em></button><button onclick="claimRew('d')"><span>🎁</span>Daily Reward<em>${canRew('d')?"Ready":"Claimed"}</em></button><button onclick="claimRew('m')"><span>🎁</span>Monthly Reward<em>${canRew('m')?"Ready":"Claimed"}</em></button><button onclick="lottery()"><span>🎲</span>Lottery<em>${50*s.level}G</em></button><button onclick="toast('Belum ulang tahunmu 🎂')"><span>🎂</span>Birthday Gifts</button><button onclick="buyKey()"><span>🗝️</span>Buy Keys<em>1,000G</em></button></div>`;
+ }else if(type==="chests"){
+  t.textContent="Chests";const k=s.keys||{};
+  h=`<div class=tlist>`+[["Bronze","🟫",1],["Silver","⬜",2],["Gold","🟨",3]].map(([n,i,q])=>`<button onclick="openChest('${n}')"><span>${i}</span>${n} Chest<em>${k[n]||0} keys</em></button>`).join("")+`</div><p class=hint>Dapatkan kunci dari Tasks atau beli di Mahol's Hut. Kunci lebih baik = item lebih langka.</p>`;
+ }else if(type==="support"){
+  t.textContent="Support";
+  const role=(n,b,i,c,d)=>`<div class="card2 role" style="border-top:3px solid ${c}"><div style="font-size:44px">${i}</div><span class=rb style="border-color:${c}">${i} ${b}</span><h3>${n}</h3><p>${d}</p><a style="color:${c}" onclick="toast('Segera hadir')">See our ${n} →</a></div>`;
+  h=`<div class="card2 role"><div style="font-size:44px">🦅</div><h3 style="font-size:22px">How can we help?</h3><p>Head over to our Helpdesk to create a support ticket.</p><button class=fight style="background:#4f46e5" onclick="toast('Helpdesk segera hadir')">Go To Helpdesk</button><button class="fight alt" style="margin-top:8px;background:#2a2a2d" onclick="openPanel('social')">Go To Discord</button><a style="color:#8b8bff;display:block;margin-top:10px" onclick="toast('Belum ada tiket')">View Your Legacy Support Tickets</a></div>`
+   +`<div class=role style="padding:16px 0"><h3 style="font-size:22px">Our Team</h3><p>Volunteer staff supporting the StepQuest community. Please treat them with respect while they help keep the world fair, welcoming, and running smoothly.</p></div><div class=gm-sec><span>Staff Roles</span></div>`
+   +role("Admins","Admin","🛡️","#f5c518","Oversee the staff team, make high-level decisions, and step into complex or escalated issues.")+role("Moderators","Mod","🛡️","#8b8bff","Answer questions, enforce community guidelines, and keep everyday interactions safe and constructive.")+role("Guardians","Guardian","🔘","#6aa8ff","Bridge the gap between players and senior staff so concerns reach the right people quickly.")
+   +`<div class="card2 role"><h3 style="font-size:22px">Community Resources</h3><p>Our community is built on mutual respect, support, and collaboration.</p>`+[["Help Discussion Board","💜","#b58cff","A place you can ask questions, share solutions, and discuss various topics.","openPanel('boards')"],["Discord Server","💎","#6aa8ff","A place to chat with other players, share tips, and get support from the community.","openPanel('social')"],["Support Channel","💛","#f5c518","A place in our chat to get assistance from community members.","toast('Segera hadir')"]].map(([n,i,c,d,f])=>`<div class=res onclick="${f}"><span>${i}</span><div><b style="color:${c}">${n}</b><br><small>${d}</small></div><em>→</em></div>`).join("")+`</div>`;
  }else if(type==="events"){
   t.textContent="Events";
   h=`<div class="banner ev"><h1>Events</h1><p>StepQuest mengadakan banyak event yang bisa kamu ikuti. Cek daftar event mendatang di bawah!</p></div><div class=tlist><button onclick="toast('Belum dimulai')"><span>🎃</span>Halloween 2026<em>Mon Oct 19 2026</em></button><button onclick="toast('Belum dimulai')"><span>🎄</span>Winter Holidays 2026<em>Mon Dec 14 2026</em></button></div>`;
@@ -458,6 +489,23 @@ function doCraft(){
  s.energy-=cq;s.cr=(s.cr||0)+cq;s.craft[1]+=15*cq;while(s.craft[1]>=50*s.craft[0]){s.craft[1]-=50*s.craft[0];s.craft[0]++}addXP(cq*s.level*5);
  save();toast("🔨 Crafted: "+got.join(", "));openPanel("craft");
 }
+const PROFS=[["Blacksmith","🔥","Strength"],["Thief","🥷","Dexterity"],["Chef","🍖","Dexterity"],["Guard","🗡️","Defence"],["Banker","💰","Defence"],["Warrior","⚔️","Strength"],["Defender","🛡️","Defence"],["Rogue","🟣","Dexterity"]];
+const RANKN={Banker:["Penny Handler","Bank Service Agent","Bank Manager","Bank Director","Master of Coin","Director of Humanity","Mr Bank Note","Made O' Money","CEO of Money","A Greedy MMORPG Developer"]};
+const RLV=[1,10,25,75,200,350,650,1050,2000,3200],RICO=["⚪","⚪","🟡","📏","💰","🦅","💵","💸","🪙","☄️"];
+function ranks(p){const n=RANKN[p]||["Apprentice","Journeyman","Adept","Expert","Veteran","Master","Grandmaster","Legend","Mythic","Ascended"].map(x=>x+" "+p);return n.map((x,i)=>[x,RLV[i],RICO[i],[10,14,20,25,30,40,45,55,76,96][i],[15,37,66,187,245,316,460,575,1006,1438][i],[5,25,85,230,400,700,850,1300,2450,3500][i]])}
+function profNeed(l){return 40+l*50}
+let pp="";
+function profS(){if(!s.prof)s.prof={cur:"Banker",lv:{},ep:5,epT:Date.now()};const P=s.prof;PROFS.forEach(([n])=>P.lv[n]=P.lv[n]||[1,0]);while(P.ep<5&&Date.now()-P.epT>=300000){P.ep++;P.epT+=300000}if(P.ep>=5)P.epT=Date.now();return P}
+function profWork(){const P=profS();if(P.ep<1)return toast("Energy profesi habis");const l=P.lv[P.cur],R=ranks(P.cur),r=R.reduce((a,x)=>l[0]>=x[1]?x:a,R[0]);if(P.ep===5)P.epT=Date.now();P.ep--;addGold(r[5]);addXP(r[3]);l[1]+=r[4];let up=0;while(l[1]>=profNeed(l[0])){l[1]-=profNeed(l[0]);l[0]++;up=1}save();toast(`💼 +${r[5]}G +${r[3]} EXP +${r[4]} ${P.cur} EXP${up?" — LEVEL UP!":""}`);openPanel("prof")}
+function pickProf(){if(!pp)return toast("Pilih profesi dulu");profS().cur=pp;pp="";save();openPanel("prof")}
+function mmss(ms){ms=Math.max(0,ms);return `${String(Math.floor(ms/60000)).padStart(2,"0")}:${String(Math.floor(ms/1000)%60).padStart(2,"0")}`}
+function bankDo(d){const max=d>0?s.gold:s.bank,v=parseInt(prompt(`${d>0?"Deposit":"Withdraw"} berapa? (maks ${max.toLocaleString()})`,max));if(!v||v<1)return;if(v>max)return toast("Jumlah melebihi saldo");s.gold-=v*d;s.bank+=v*d;save();toast(d>0?"💰 Deposit berhasil":"💰 Withdraw berhasil");openPanel("bank")}
+function rk(k){const d=new Date();return k==="d"?d.toDateString():d.getFullYear()+"-"+d.getMonth()}
+function canRew(k){return (s.rw||{})[k]!==rk(k)}
+function claimRew(k){if(!canRew(k))return toast("Sudah diklaim");s.rw=s.rw||{};s.rw[k]=rk(k);const g=(k==="d"?50:500)*s.level;addGold(g);s.keys=s.keys||{};if(k==="m")s.keys.Silver=(s.keys.Silver||0)+1;save();toast(`🎁 +${g.toLocaleString()} gold${k==="m"?" + 1 Silver Key":""}`);openPanel("mahol")}
+function lottery(){const c=50*s.level;if(s.gold<c)return toast("❌ Gold tidak cukup!");s.gold-=c;const r=Math.random();let m="🎲 Tidak menang kali ini";if(r<.02){addGold(c*25);m=`🎉 JACKPOT! +${(c*25).toLocaleString()}G`}else if(r<.2){addGold(c*2);m=`🎲 Menang +${(c*2).toLocaleString()}G`}save();toast(m);openPanel("mahol")}
+function buyKey(){if(s.gold<1000)return toast("❌ Gold tidak cukup!");s.gold-=1000;s.keys=s.keys||{};s.keys.Bronze=(s.keys.Bronze||0)+1;save();toast("🗝️ +1 Bronze Key");openPanel("mahol")}
+function openChest(n){s.keys=s.keys||{};if(!(s.keys[n]>0))return toast("Tidak punya "+n+" Key");s.keys[n]--;const q={Bronze:1,Silver:2,Gold:3}[n],got=[];for(let i=0;i<q;i++){let it=rollItem();if(n==="Gold"&&ITEMS[it][0]<2)it=rollItem();s.inv.push(it);got.push(it)}const g=q*100*s.level;addGold(g);save();toast(`🧰 +${g}G: ${got.join(", ")}`);openPanel("chests")}
 function closePanel(){const m=document.getElementById("modal");m.classList.add("hidden");m.classList.remove("full","page")}
 
 // MENU SAMPING (hamburger)

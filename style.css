@@ -350,3 +350,15 @@ body{background:radial-gradient(circle at 85% 75%,rgba(120,90,20,.22),transparen
 .crow{display:flex;align-items:center;gap:14px;background:#262628;border-radius:10px;padding:14px 16px;margin-bottom:4px}
 .crow span{font-size:22px}.crow em{margin-left:auto;font-style:normal;color:#ccc;font-weight:600}
 .tabs button.on{width:auto;height:auto;display:block;background:none;border-radius:0}
+.pc{text-align:center;display:flex;flex-direction:column;gap:4px}
+.regen{background:#0f4a36;color:#d6ffe9;border-radius:14px;padding:4px 12px;font-weight:600}
+.rk{display:flex;gap:14px;align-items:center;background:#111;border:1px solid #222;border-radius:12px;padding:14px;margin-bottom:6px}
+.rk.lk{opacity:.55}.ri{font-size:28px;width:38px;text-align:center}
+.rk .chips span{font-size:13px;padding:6px 10px}
+.pr{display:flex;align-items:center;gap:14px;padding:12px 14px;border:2px solid transparent;border-radius:12px;cursor:pointer;margin-bottom:6px}
+.pr em{margin-left:auto;font-style:normal;background:#0f3b2c;color:#d6ffe9;border-radius:8px;padding:6px 12px;font-weight:600}
+.pr.cur{border-color:#6b3a10;color:#888}.pr.sel{border-color:#5b52f0;background:#15142a}
+.bal{font-size:40px;font-weight:700;margin:8px 0}
+.role{text-align:center;display:flex;flex-direction:column;align-items:center;gap:8px}.role p{color:#bbb;line-height:1.5}.role a{cursor:pointer}
+.rb{border:1px solid;border-radius:8px;padding:4px 10px;font-size:13px}
+.res{display:flex;gap:14px;align-items:center;text-align:left;padding:14px 0;border-bottom:1px solid #222;width:100%;cursor:pointer}.res small{color:#bbb}.res em{margin-left:auto;font-style:normal;color:#aaa}
