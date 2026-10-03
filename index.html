@@ -1,165 +1,81 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-    <title>StepQuest — Travel RPG</title>
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <!-- FontAwesome Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mini MMORPG - Web</title>
+    <style>
+        body { margin: 0; background-color: #222; display: flex; justify-content: center; align-items: center; height: 100vh; color: white; font-family: sans-serif; }
+        canvas { background-color: #78a252; border: 4px solid #333; }
+        #ui { position: absolute; top: 10px; left: 10px; }
+    </style>
 </head>
 <body>
+    <div id="ui">Gunakan tombol W, A, S, D untuk bergerak</div>
+    <canvas id="gameCanvas" width="800" height="600"></canvas>
 
-<!-- Halaman Login -->
-<div id="loginOverlay" class="login-overlay">
-    <div class="login-box">
-        <div class="avatar" style="margin: 0 auto 15px auto; width: 60px; height: 60px; font-size: 35px;"><i class="fa-solid fa-jedi"></i></div>
-        <h2>StepQuest</h2>
-        <p style="margin-bottom: 20px; font-size: 13px; color: #a0a0a0;">Login / Daftar otomatis</p>
+    <!-- Import Socket.io dari CDN -->
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <script>
+        // Ganti URL ini dengan URL server backend kamu nanti (misal dari Render/Glitch)
+        const socket = io('https://server-mmo-kamu.onrender.com'); 
         
-        <input type="text" id="username" placeholder="Username (Ketik 'admin' utk Admin)" autocomplete="off">
-        <input type="password" id="password" placeholder="Password">
-        
-        <button class="btn-login" onclick="doLogin()">Masuk Game</button>
-    </div>
-</div>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
 
-<!-- Layar Utama Game (Tersembunyi sebelum login) -->
-<div id="gameScreen" style="display: none; flex-direction: column; height: 100vh;">
-    <!-- Header -->
-    <header class="topbar">
-        <button class="hamb" onclick="toggleMenu()"><i class="fa-solid fa-bars"></i><b id="notif">2</b></button>
-        <div class="brand">StepQuest</div>
-        <div class="header-right"><i class="fa-solid fa-user-group" onclick="openPanel('party')" style="cursor:pointer"></i><i class="fa-regular fa-message"></i></div>
-    </header>
+        // Data pemain
+        let players = {};
+        const myId = Math.random().toString(36).substring(7);
+        let myPlayer = { x: 400, y: 300, color: 'blue' };
 
-    <main>
-        <!-- Profile Card -->
-        <section class="profile-card" id="profileCard">
-            <div class="profile-actions">
-                <button class="action-icon" onclick="openPanel('stats')"><i class="fa-solid fa-gear"></i></button>
-                <button class="action-icon" onclick="openAdminPanel()"><i class="fa-solid fa-ellipsis-vertical"></i></button>
-            </div>
-            <div class="profile-info-row">
-                <div class="avatar"><i class="fa-solid fa-jedi"></i></div>
-                <div class="user-details">
-                    <strong id="playerName">Forlorn</strong>
-                    <div class="level-gold"><span>Level <b id="level">1</b></span><span>—</span><span><i class="fa-solid fa-circle-dollar-to-slot gold-icon"></i> <b id="gold">0</b></span></div>
-                </div>
-            </div>
-            <div class="xpbar-container"><div class="xpbar-fill" id="xpbar"></div></div>
-            <div class="xptext"><span id="xp">0</span> / <span id="nextXp">50</span> XP</div>
-        </section>
+        // Kontrol pergerakan
+        const keys = { w: false, a: false, s: false, d: false };
+        window.addEventListener('keydown', (e) => keys[e.key] = true);
+        window.addEventListener('keyup', (e) => keys[e.key] = false);
 
-        <!-- Avatar / Companions -->
-        
+        // Update loop
+        function update() {
+            let moved = false;
+            const speed = 5;
 
-        <!-- Boosts -->
-        <section class="boosts">
-            <span class="pill green" id="bExp">📍 Simpletopia</span>
-            <span class="pill red">❤️ <b id="hpTxt">100/100</b></span>
-            <span class="pill yellow">⚡ <b id="energyTxt">100</b>/100</span>
-            <span class="pill orange">🔥 <b id="qEnergyTxt">50</b>/50</span>
-            <span class="pill purple hidden" id="spPill">+25% Step Speed</span>
-        </section>
+            if (keys.w && myPlayer.y > 0) { myPlayer.y -= speed; moved = true; }
+            if (keys.s && myPlayer.y < canvas.height) { myPlayer.y += speed; moved = true; }
+            if (keys.a && myPlayer.x > 0) { myPlayer.x -= speed; moved = true; }
+            if (keys.d && myPlayer.x < canvas.width) { myPlayer.x += speed; moved = true; }
 
-        <!-- Quick Action Buttons -->
-        <section class="quick">
-            <button onclick="openPanel('party')"><i class="fa-solid fa-user-group"></i> Party</button>
-            <button onclick="openPanel('potions')"><i class="fa-solid fa-flask"></i> Potions</button>
-            <!-- Tombol Sprint Baru (Menguras Energy) -->
-            <button id="sprintBtn" onclick="doSprint()"><i class="fa-solid fa-forward"></i> Sprint</button>
-            <div id="sprintPop" class="sprint-pop hidden">
-                <b>How many minutes?</b>
-                <div class="sp-in"><input id="spMin" type="number" min="1" max="60" value="1" oninput="spMin=Math.max(1,+this.value||1);document.getElementById('spCost').textContent=spMin"><button onclick="spAdj(-1)">−</button><button onclick="spAdj(1)">+</button></div>
-                <div class="sp-cost">This will cost ⚡ <span id="spCost">1</span> energy</div>
-                <button class="mini2" onclick="startSprint()">Sprint</button>
-            </div>
-        </section>
+            if (moved) {
+                // Kirim posisi ke server
+                socket.emit('playerMovement', { id: myId, x: myPlayer.x, y: myPlayer.y });
+            }
+        }
 
-        <!-- Travel Area -->
-        <section class="travel">
-            <div id="eventBox" class="event"><b class="ev-title">👣 Kamu melangkah...</b><div class="ev-text">Petualangan di sini acak sepenuhnya. Duduk santai dan jelajahi dunia hanya dengan satu tombol.</div></div>
-            <div id="actionBox"></div>
-            <div id="sprintBan" class="sprint-ban hidden"></div>
-            <div class="step-container">
-                <button id="stepBtn" class="step-btn" onclick="takeStep(false)"><i class="fa-solid fa-hand-point-right"></i> Take a Step</button>
-            </div>
-            <div class="scene" id="scene">
-                <div class="fl far"></div><div class="fl mid"></div><div class="fl near"></div><div class="fl ground"></div>
-                <div class="hero"><i class="fa-solid fa-jedi"></i></div>
-            </div>
-        </section>
-    </main>
+        // Render loop
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Gambar semua pemain dari server
+            for (let id in players) {
+                ctx.fillStyle = players[id].color;
+                ctx.fillRect(players[id].x, players[id].y, 30, 30);
+            }
+            
+            // Gambar karakter kita sendiri
+            ctx.fillStyle = myPlayer.color;
+            ctx.fillRect(myPlayer.x, myPlayer.y, 30, 30);
+        }
 
-    <!-- Bottom Nav -->
-    <nav class="bottom-nav">
-        <button class="nav-item" onclick="closePanel()">
-            <i class="fa-solid fa-house"></i>
-            <span>Home</span>
-        </button>
-        <button class="nav-item" onclick="openPanel('quests')">
-            <i class="fa-solid fa-star"></i>
-            <span>Quests</span>
-        </button>
-        
-        <!-- Tombol tengah (Battle) -->
-        <div class="nav-item nav-walk active" onclick="closePanel()">
-            <div class="walk-circle">
-                <i class="fa-solid fa-person-walking"></i>
-            </div>
-            <span>Battle</span>
-        </div>
-        
-        <button class="nav-item" onclick="openPanel(enemy?'battle':'hub')">
-            <i class="fa-solid fa-khanda"></i>
-            <span>Battle</span>
-        </button>
-        <button class="nav-item active" onclick="openPanel('stats')">
-            <i class="fa-solid fa-jedi" style="color:#5ce1e6"></i>
-            <span>You</span>
-        </button>
-    </nav>
-</div>
+        // Terima data dari server
+        socket.on('stateUpdate', (serverPlayers) => {
+            players = serverPlayers;
+        });
 
-<!-- Menu samping -->
-<div id="sideBackdrop" class="side-backdrop" onclick="toggleMenu()"></div>
-<aside id="sideMenu" class="side-menu">
-    <div class="side-head2"><div class="avatar"><i class="fa-solid fa-jedi"></i></div><div class="sh-info"><b id="menuName">Player</b><small>Level <span id="menuLvl">1</span></small></div><i class="fa-regular fa-message"></i><i class="fa-regular fa-bell"></i></div>
-    <button class="viewchar" onclick="menuGo('char')">View Character<b>2</b></button>
-    <button onclick="menuGo('town')"><i class="fa-solid fa-map" style="color:#e0c28a"></i> Town</button>
-    <button onclick="menuGo('inventory')"><i class="fa-solid fa-bag-shopping" style="color:#d98a62"></i> Inventory</button>
-    <div class="side-sec">Character</div>
-    <button class="soon" onclick="toast('Segera hadir')"><i class="fa-solid fa-wand-sparkles"></i> Profession</button>
-    <button onclick="menuGo('tasks')"><i class="fa-solid fa-scroll"></i> Tasks</button>
-    <button onclick="menuGo('collect')"><i class="fa-solid fa-box-archive"></i> Collections</button>
-    <button onclick="menuGo('craft')"><i class="fa-solid fa-hammer"></i> Crafting</button>
-    <div class="side-sec">Social</div>
-    <button onclick="menuGo('guilds')"><i class="fa-solid fa-shield-halved"></i> Guilds</button>
-    <button onclick="menuGo('leader')"><i class="fa-solid fa-trophy"></i> Leaderboards</button>
-    <button onclick="menuGo('boards')"><i class="fa-solid fa-comments"></i> Discussion Boards</button>
-    <button onclick="menuGo('social')"><i class="fa-solid fa-face-smile"></i> Social Media</button>
-    <button onclick="menuGo('events')"><i class="fa-solid fa-fire"></i> Events</button>
-    <div class="side-sec">More</div>
-    <button class="soon" onclick="toast('Segera hadir')"><i class="fa-solid fa-gem"></i> Diamond Store <span class="sale">Sale</span></button>
-    <button onclick="menuGo('settings')"><i class="fa-solid fa-gear"></i> Settings</button>
-    <button class="soon" onclick="toast('Segera hadir')"><i class="fa-solid fa-book-open"></i> About</button>
-    <button class="soon" onclick="toast('Segera hadir')"><i class="fa-solid fa-life-ring"></i> Support</button>
-    <button onclick="location.reload()"><i class="fa-solid fa-right-from-bracket"></i> Logout</button>
-</aside>
-
-<!-- Modals -->
-<div id="modal" class="modal hidden">
-    <div class="modal-card">
-        <button class="close" onclick="closePanel()">×</button>
-        <h2 id="modalTitle"></h2>
-        <div id="modalBody"></div>
-    </div>
-</div>
-<div id="toast" class="toast"></div>
-
-<script src="script.js"></script>
+        // Game Loop utama
+        function gameLoop() {
+            update();
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+        gameLoop();
+    </script>
 </body>
 </html>
