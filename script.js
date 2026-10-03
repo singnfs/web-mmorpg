@@ -35,7 +35,7 @@ const NODES={
 const SHOP=[["Healing Herb",50,"+35 HP","item"],["Rusty Dagger",150,"+5 ATK","item"],["Leather Vest",120,"+4 DEF","item"],["Iron Sword",400,"+9 ATK","item"],["Knight Helm",300,"+10 DEF","item"],["Pickaxe",250,"Tool Mining","tool"],["Axe",250,"Tool Woodcutting","tool"],["Fishing Rod",250,"Tool Fishing","tool"],["Shovel",300,"Tool Treasure","tool"],["Wooden Shield",120,"+6 DEF","item"],["Leather Boots",90,"+4 DEF","item"],["Leather Gloves",90,"+3 DEF","item"]];
 const FLAVOR=["Seorang petani memberimu sebuah apel.","Kamu melihat merpati membawa surat kosong.","Kamu tersandung akar pohon. Untung tidak ada yang lihat.","Seorang pedagang berbisik: harga Healing Herb naik besok.","Awan di atas kepalamu berbentuk seperti Slime."];
 
-const def=()=>({name:"",level:1,xp:0,gold:0,hp:100,maxHp:100,str:10,def:5,dex:5,steps:0,kills:0,inv:[],eq:{weapon:null,armor:null},energy:100,qe:50,tools:{},party:[],loc:0,pts:0,tx:0,bk:0,bank:0,feed:[],aw:{},joined:Date.now(),qd:{},qc:0,au:0,ap:[],sk:{Mining:[1,0],Woodcutting:[1,0],Fishing:[1,0],Treasure:[1,0]},q:{steps:0,kills:0,gathers:0}});
+const def=()=>({name:"",level:1,xp:0,gold:0,hp:100,maxHp:100,str:10,def:5,dex:5,steps:0,kills:0,inv:[],eq:{weapon:null,armor:null},energy:100,qe:50,tools:{},party:[],loc:0,pts:0,pots:{exp:2,rar:1},pa:{},tx:0,bk:0,bank:0,feed:[],aw:{},joined:Date.now(),qd:{},qc:0,au:0,ap:[],sk:{Mining:[1,0],Woodcutting:[1,0],Fishing:[1,0],Treasure:[1,0]},q:{steps:0,kills:0,gathers:0}});
 
 // UTIL
 function rand(a,b){return Math.floor(Math.random()*(b-a+1))+a}
@@ -50,7 +50,7 @@ function bar(v,m){return `<div class=hpb><i style="width:${Math.max(0,v/m*100)}%
 function save(){checkAwards();localStorage.setItem(SK,JSON.stringify(s));updateUI()}
 function toast(t){const x=document.getElementById("toast");x.textContent=t;x.classList.add("show");setTimeout(()=>x.classList.remove("show"),1500)}
 function rollItem(){
- let r=Math.random()*100,t=0;
+ let r=Math.random()*100*(s.pa&&s.pa.rar>Date.now()?.95:1),t=0;
  while(t<7&&r>=W[t]){r-=W[t];t++}
  let p=[];for(;t>=0;t--){p=Object.keys(ITEMS).filter(k=>ITEMS[k][0]==t);if(p.length)break}
  return p[rand(0,p.length-1)];
@@ -89,6 +89,7 @@ function eventText(text){
 }
 
 function addXP(n){
+ if(s.pa&&s.pa.exp>Date.now())n=Math.ceil(n*1.05);
  s.xp+=n;s.tx+=n;let lv=0;
  while(s.xp>=nextXP()){s.xp-=nextXP();s.level++;lv++;s.maxHp+=10;s.hp=s.maxHp;s.pts+=4;s.feed.unshift(["Reached level "+s.level,Date.now()]);s.feed.length=Math.min(s.feed.length,20)}
  return lv;
@@ -273,7 +274,7 @@ function openAdminPanel(){
 
 function openPanel(type){
  const m=document.getElementById("modal"),t=document.getElementById("modalTitle"),b=document.getElementById("modalBody");
- let h="";m.classList.toggle("full",type==="battle");m.classList.toggle("page",["char","profile","hub","inventory","shops","shop","town"].includes(type));
+ let h="";m.classList.toggle("full",type==="battle");m.classList.toggle("page",["char","profile","hub","inventory","shops","shop","town","loc","settings","party","myparty","leader","lbview","boards","social","events"].includes(type));
  if(type==="stats"){
   t.textContent="";
   const cr=(a,v,m)=>`<div class=cm-row><b>${a}</b><span><b>${v.toLocaleString()}</b> / ${m.toLocaleString()}</span></div>`;
@@ -324,8 +325,12 @@ function openPanel(type){
    if(!SHOPS[curShop][1].includes(n))return "";const own=ty==="tool"&&s.tools[n];
    return `<div class=loot><span><b>${n}</b><br><small>${d}</small></span><button class=mini ${own?"disabled":""} onclick="buy(${i})">${own?"Dimiliki":p+"G"}</button></div>`}).join(""):"<p>Toko ini belum buka.</p>");
  }else if(type==="potions"){
-  t.textContent="Potions";
-  h=`<div class=loot>🌿 Healing Herb — ${s.inv.filter(x=>x==="Healing Herb").length}x</div><button class=fight onclick="heal()">Pakai (+35 HP)</button><button class="fight alt" style="margin-top:8px" onclick="healer()">🧙 Folen the Healer (${5*s.level}G)</button><p style="margin-top:10px">HP: ${s.hp}/${s.maxHp}</p>`;
+  t.textContent="";
+  const herb=s.inv.filter(x=>x==="Healing Herb").length,row=(c,i,n,m,f)=>`<div class=por onclick="${f}"><span class=pq>${c}x</span><span>${i}</span><span class=pn>${n}</span><span class=pm>${m}</span></div>`;
+  h=`<div class=poh>🧪 <b>Use Potion</b></div><div class=pot><b class=pot-t>Travel</b>`
+   +row(s.pots.exp,"🧪","5% Experience",potLeft("exp")||"5 minutes","usePot('exp')")+row(s.pots.rar,"🧪","5% Rarity Rate",potLeft("rar")||"15 minutes","usePot('rar')")
+   +`<b class=pot-t>Health</b>`+row(herb,"🌿",`Healing Herb (+35 HP)`,`${s.hp}/${s.maxHp}`,"heal()")+row("1","🧙",`Folen the Healer`,`${5*s.level}G`,"healer()")
+   +`</div><button class="fight alt" style="background:#111" onclick="closePanel()">Close</button>`;
  }else if(type==="battle"){
   t.textContent="";
   if(!enemy)h="<p>Jalan dulu cari musuh!</p>";else{
@@ -334,20 +339,12 @@ function openPanel(type){
     +`<div class=bt-arena><div class=bt-sp><i class="fa-solid fa-jedi" style="color:#5ce1e6"></i>${s.party.map(k=>`<i class="fa-solid ${COMP[k][0]} pet"></i>`).join("")}</div><div class=bt-sp>${enemy.ico||"👹"}</div></div><div class=bt-log>${logs[0]||""}</div>`
     +`<div class=bt-panel><div class=bt-en><i class="fa-solid fa-bolt"></i><div class=ebar><i style="width:${s.energy}%"></i></div><b>${s.energy}/100</b></div><button class=fight style="background:#4f46e5" onclick="fight('atk')">Attack</button><button class="fight alt" style="margin-top:8px" onclick="fight('herb')">Use Item (${s.inv.filter(x=>x==="Healing Herb").length})</button><div class=btn-row><button class="fight sp" onclick="fight('sp')">💫 Special (10⚡)</button><button class="fight alt" onclick="fight('run')">🏃 Kabur</button></div></div></div>`;
   }
- }else if(type==="settings"){
-  t.textContent="Settings";
-  h=`<button class="fight alt" onclick="localStorage.removeItem(SK);location.reload()">🗑️ Hapus save karakter ini</button><p style="margin-top:10px;font-size:12px;color:var(--text-muted)">Progress tersimpan otomatis di browser (per username).</p>`;
  }else if(type==="town"){
   t.textContent="Town";
   const L=LOCS[s.loc],sec=(n,r)=>`<div class=tsec>${n}</div><div class=tlist>`+r.map(([a,i,f])=>`<button onclick="${f||"toast('Segera hadir')"}"><span>${i}</span>${a}</button>`).join("")+`</div>`;
   h=`<div class=banner><h1>${L[0]}</h1><p>Kamu berkeliling di kota ${L[0]} dan mendengar obrolan penduduk bergema di telingamu.</p><div class=chips2><button class=mini2 style="background:#4f46e5" onclick="openPanel('loc')">Change Location</button><button class=mini2 onclick="toast('Segera hadir')">View Bulletin Board</button></div></div>`
    +sec("Market",[["Player Market","🤝"],["Item Shop","🛒","openPanel('shops')"],["Diamond Market","💎"],["Bank","💰"]])+sec("East Side",[["Mahols Hut","⛺"],["Folen the Healer","🧙","healer()"],["Item Dumping Grounds","🦴"]])
    +sec("Underground",[["Bounties","🎯"],["Vault","📦"]])+sec("Town Centre",[["Temple","⛪"],["Orphanage","🧸"],["Town Hall","📜"],["Library","📚"]]);
- }else if(type==="party"){
-  t.textContent=`Travel Party (${s.party.length+1}/4)`;
-  h=`<div class=loot><span>👑 <b>${s.name}</b><br><small>Owner</small></span></div>`+Object.entries(COMP).map(([k,c])=>{const on=s.party.includes(k);return `<div class=loot><span><i class="fa-solid ${c[0]}"></i> <b>${c[1]}</b></span><button class="mini ${on?"alt":""}" onclick="${on?"kick":"recruit"}('${k}')">${on?"Keluarkan":"Undang"}</button></div>`}).join("")
-   +`<p style="margin-top:10px;font-size:12px;color:var(--text-muted)">Party gratis, maks 4 orang. Saat kamu melangkah, tiap teman punya peluang memberi EXP & Gold kecil sesuai levelmu.</p>`
-   +(s.party.length?`<button class="fight alt" style="margin-top:10px" onclick="disband()">Bubarkan Party (Solo)</button>`:"");
  }else if(type==="quests"){
   t.textContent="Quests";
   const F=["All","In Progress","Completed","Not Completed"];
@@ -362,11 +359,53 @@ function openPanel(type){
   h=`<p style="font-size:12px;color:var(--text-muted);margin-bottom:6px">Lawan NPC lokasi ${LOCS[s.loc][0]}. Biaya: Gold + 1⚡ per NPC (kamu ${s.energy}⚡)</p>`
    +ARENA.map((a,i)=>{const ok=i<=s.au;return `<div class=loot style="${ok?"":"opacity:.45"}"><span><b>${a[0]}</b><br><small>${ok?`${Math.min(s.ap[i]||0,a[2])}/${a[2]} NPC — 🪙${arenaCost(i)} — ~${Math.round(a[1]*nextXP()*.06)} XP`:"🔒 Selesaikan tier sebelumnya"}</small></span><button class=mini ${ok?"":"disabled"} onclick="arenaFight(${i})">Lawan</button></div>`}).join("");
  }else if(type==="loc"){
-  t.textContent="Horse & Carriage";
-  h=LOCS.map((l,i)=>`<div class=loot><span><b>${l[0]}</b>${i===s.loc?" 📍":""}<br><small>Level ${l[1]} — ${l[2].join(", ")}</small></span><button class=mini ${l[1]>s.level||i===s.loc?"disabled":""} onclick="goLoc(${i})">Pergi</button></div>`).join("");
+  t.textContent="Horse and Carriage";
+  h=LOCS.map((l,i)=>l[1]>s.level+20?"":`<button class="locc ${i===s.loc?"cur":""} ${l[1]>s.level?"lock":""}" style="background:${LBG[i]}" onclick="goLoc(${i})"><b>${l[0]}</b><span class=lchips><span>Level ${l[1]}</span><span>${(LPOP[i]).toLocaleString()} <i class="fa-solid fa-users"></i></span></span></button>`).join("")+`<p class=hint>You can unlock more locations by levelling up</p>`;
+ }else if(type==="settings"){
+  t.textContent="Settings";
+  const sec=(n,r)=>`<div class=tsec>${n}</div><div class=tlist>`+r.map(([a,i,f])=>`<button onclick="${f||"toast('Segera hadir')"}"><span>${i}</span>${a}</button>`).join("")+`</div>`;
+  h=sec("Character",[["Change username","🪶","renameChar()"],["Change username colour","🧪"],["Change profile number","📜"],["Safe Mode","🛡️"]])+sec("Account",[["Change Password","🔒"],["Change Email Address","💾"]])
+   +sec("More",[["Push Notifications","❗"],["Membership Settings","🌐"],["Notifications Filter","❕"],["Dark Mode","🌌","toast('Dark mode sudah aktif')"],["Blocked Players","🙁"],["Customisation","⚙️"]])
+   +sec("Deletion",[["Delete Account","❌","if(confirm('Hapus save karakter ini?')){localStorage.removeItem(SK);location.reload()}"]]);
+ }else if(type==="party"){
+  t.textContent="Travel Party";
+  const n=s.party.length+1;
+  h=`<div class=tsec>Options</div><div class=tlist><button onclick="openPanel('myparty')"><span><i class="fa-solid fa-circle-plus" style="margin:0;color:#ddd"></i></span>${s.party.length?"My Party ("+n+"/4)":"Create Party"}</button></div>`
+   +`<div class=tsec>Invites</div><p class=hint>There are no pending Invites</p><div class=tsec>Friends Parties</div><p class=hint>There are no friend parties.</p>`
+   +`<div class=tsec>Public Parties</div><div class=tlist>`+PUB.map(([nm,ic,ow,c,f])=>`<button onclick="${f?"toast('Party penuh')":"openPanel('myparty')"}"><span>${ic}</span><span class=pp><b>${nm}</b><small style="color:${c}">${ow}</small></span><em class="${f?"full":"free"}">${f?"Full":f===0&&false?"":(4-(nm.length%3+1))+" spaces free"}</em></button>`).join("")+`</div>`;
+ }else if(type==="myparty"){
+  t.textContent=`My Party (${s.party.length+1}/4)`;
+  h=`<div class=loot><span>👑 <b>${s.name}</b><br><small>Owner</small></span></div>`+Object.entries(COMP).map(([k,c])=>{const on=s.party.includes(k);return `<div class=loot><span><i class="fa-solid ${c[0]}"></i> <b>${c[1]}</b></span><button class="mini ${on?"alt":""}" onclick="${on?"kick":"recruit"}('${k}')">${on?"Keluarkan":"Undang"}</button></div>`}).join("")
+   +`<p class=hint>Tiap teman punya peluang memberi EXP & Gold kecil saat kamu melangkah.</p>`+(s.party.length?`<button class="fight alt" onclick="disband()">Bubarkan Party</button>`:"");
+ }else if(type==="leader"){
+  t.textContent="Leaderboards";
+  h=`<div class=tlist>`+LB.map(([n,i,f])=>`<button onclick="lbKey='${n}';openPanel('lbview')"><span>${i}</span>${n}</button>`).join("")+`</div>`;
+ }else if(type==="lbview"){
+  const e=LB.find(x=>x[0]===lbKey),me=e[2](s);t.textContent=lbKey;
+  const rows=BOTS.map((b,i)=>[b,Math.round(Math.max(me,10)*(3.2-i*.45))]).concat([[s.name+" (You)",me]]).sort((a,b)=>b[1]-a[1]);
+  h=`<div class=tlist>`+rows.map(([n,v],i)=>`<button class="${n.endsWith("(You)")?"me":""}"><span>${["🥇","🥈","🥉"][i]||"#"+(i+1)}</span>${n}<em>${v.toLocaleString()}</em></button>`).join("")+`</div>`;
+ }else if(type==="boards"){
+  t.textContent="Discussion Boards";
+  const sec=(n,r)=>`<div class=tsec>${n}</div><div class=tlist>`+r.map(([a,i,c])=>`<button onclick="toast('Board ${a} segera hadir')"><span>${i}</span>${a}<em>${c.toLocaleString()}</em></button>`).join("")+`</div>`;
+  h=sec("Main",[["General","💬",6117],["Suggestions","❤️",25616],["Trade","🔁",8203],["Help","❓",3706],["Games and Competitions","🎲",1609],["Bugs","🐞",2990],["Guilds","🛡️",619]])+sec("Other",[["Introductions","👋",435],["Video Games","🎮",272],["Television","📺",92],["Music","🎵",200]]);
+ }else if(type==="social"){
+  t.textContent="Social Media";
+  h=`<div class=tlist><button onclick="toast('Discord segera hadir')"><span>👾</span>Discord<i class="fa-solid fa-caret-right"></i></button><button onclick="toast('Instagram segera hadir')"><span>📸</span>Instagram<i class="fa-solid fa-caret-right"></i></button></div><div class=tlist><button onclick="toast('Road map segera hadir')"><span>🗺️</span>StepQuest Road Map<i class="fa-solid fa-caret-right"></i></button></div>`;
+ }else if(type==="events"){
+  t.textContent="Events";
+  h=`<div class="banner ev"><h1>Events</h1><p>StepQuest mengadakan banyak event yang bisa kamu ikuti. Cek daftar event mendatang di bawah!</p></div><div class=tlist><button onclick="toast('Belum dimulai')"><span>🎃</span>Halloween 2026<em>Mon Oct 19 2026</em></button><button onclick="toast('Belum dimulai')"><span>🎄</span>Winter Holidays 2026<em>Mon Dec 14 2026</em></button></div>`;
  }
  b.innerHTML=h;m.classList.remove("hidden");
 }
+const LBG=["linear-gradient(rgba(0,0,0,.25),rgba(0,0,0,.25)),radial-gradient(ellipse at 80% 110%,#3f8a34 0 30%,transparent 31%),linear-gradient(#5a8a7a,#2f6b4a)","linear-gradient(rgba(0,0,0,.25),rgba(0,0,0,.25)),linear-gradient(170deg,#6a8ab0 0 40%,#3a7a3a 41%,#a8904a 70%,#2f6b2a)","linear-gradient(rgba(0,0,0,.2),rgba(0,0,0,.2)),linear-gradient(#3a1a14,#6a2a1e 60%,#2a120c)","linear-gradient(rgba(0,0,0,.2),rgba(0,0,0,.2)),linear-gradient(#1f6a6a 0 15%,#4a2a3a 16%,#8a3a2a 70%,#3a1a1a)","linear-gradient(rgba(0,0,0,.2),rgba(0,0,0,.2)),linear-gradient(#a8c8e8,#e8f0f8 60%,#8aa8c8)"];
+const LPOP=[90686,15996,18179,13384,8021];
+const PUB=[["calm steps","🧘","[Φ] calmly","#a855f7",1],["5mk Glory","🤸","[TSL] Mickey","#e74c3c",0],["Steeeping","🧙‍♀️","[BRG] Mima Mima","#4cd964",0],["5MK","👹","[TSL] Minnie","#e74c3c",0],["Endlessly stepping 5 min","🌳","[Φ] Farmer","#a855f7",1],["steppy","🐷","[RF] Ameliaaahh","#ff6b6b",0]];
+const BOTS=["Cihhhh","Forlorn","Mima Mima","Ameliaaahh","calmly","Mickey"];
+const LB=[["Steps","🥾",s=>s.steps],["Gold","🪙",s=>s.gold],["Level","✨",s=>s.level],["NPC Kills","💥",s=>s.kills],["Player Kills","⚔️",s=>0],["Strength","🏆",s=>atk()],["Dexterity","🏅",s=>s.dex],["Defence","🛡️",s=>dfn()],["Successful Quests","💎",s=>s.qc],["World Boss Kills","🐉",s=>s.bk],["Woodcutting","🪓",s=>s.sk.Woodcutting[0]],["Mining","⛏️",s=>s.sk.Mining[0]],["Fishing","🎣",s=>s.sk.Fishing[0]],["Treasure Hunting","🗝️",s=>s.sk.Treasure[0]]];
+let lbKey="Steps";
+function potLeft(k){const l=(s.pa[k]||0)-Date.now();return l>0?`${Math.floor(l/60000)}:${String(Math.floor(l/1000)%60).padStart(2,"0")} left`:""}
+function usePot(k){if(s.pots[k]<1)return toast("Potion habis");s.pots[k]--;s.pa[k]=Math.max(Date.now(),s.pa[k]||0)+(k==="exp"?5:15)*60000;save();toast(k==="exp"?"+5% Experience aktif":"+5% Rarity Rate aktif");openPanel("potions")}
+function renameChar(){const n=prompt("Username baru:",s.name);if(n&&n.trim()){s.name=n.trim();save();toast("Nama diganti")}}
 function closePanel(){const m=document.getElementById("modal");m.classList.add("hidden");m.classList.remove("full","page")}
 
 // MENU SAMPING (hamburger)

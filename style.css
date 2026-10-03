@@ -323,3 +323,21 @@ body{background:radial-gradient(circle at 85% 75%,rgba(120,90,20,.22),transparen
 .qr{color:#bbb;font-weight:600;margin:14px 0 8px}
 .chips span.ok{background:#0f3b2c;color:#6ee7a8}.chips span.mid{background:#3b3314;color:#ffd866}.chips span.bad{background:#3b1820;color:#ff8a96}
 .warn{background:#f39c12;color:#1a1000;border-radius:8px;padding:14px;margin-top:16px;line-height:1.4}
+
+/* ===== pages: locations, lists, potions ===== */
+.locc{display:flex;flex-direction:column;align-items:flex-start;gap:8px;width:100%;min-height:104px;border:2px solid #333;border-radius:12px;padding:12px 16px;margin-bottom:10px;color:#fff;cursor:pointer;text-align:left}
+.locc b{font-size:20px;text-shadow:0 2px 4px rgba(0,0,0,.6)}
+.locc.cur{border:3px solid #5b52f0}.locc.lock{filter:grayscale(.7);opacity:.6}
+.lchips{display:flex;gap:8px}.lchips span{background:rgba(20,20,22,.88);border-radius:8px;padding:6px 12px;font-weight:600;font-size:16px}
+.hint{text-align:center;color:#888;margin:10px 0 16px}
+.tlist button em{margin-left:auto;font-style:normal;color:#ccc}
+.tlist button.me{background:#1d1a3a}
+.tlist button em.full{background:#8a1f1f;color:#fff;border-radius:14px;padding:4px 12px;font-weight:600}
+.tlist button em.free{background:#0f4a36;color:#d6ffe9;border-radius:14px;padding:4px 12px;font-weight:600;white-space:nowrap}
+.pp{display:flex;flex-direction:column;width:auto!important;text-align:left!important;font-size:16px!important}.pp small{font-size:14px}
+.banner.ev{background:linear-gradient(rgba(10,20,40,.45),rgba(10,20,40,.6)),linear-gradient(160deg,#2a3a5a,#8aa0c0 60%,#dfe8f0)}
+.poh{display:flex;gap:10px;align-items:center;padding:0 0 16px;margin:-6px -25px 0;padding-left:25px;border-bottom:1px solid #333;font-size:17px}
+.pot{padding:6px 0 10px}.pot-t{display:block;font-size:20px;margin:18px 0 8px}
+.por{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid #2a2a2e;cursor:pointer}
+.pq{background:#2a2a2d;border-radius:6px;padding:6px 10px;font-weight:700;min-width:44px;text-align:center}
+.pn{flex:1;color:#ddd}.pm{background:#2a2a2d;border-radius:8px;padding:8px 10px;font-weight:600;max-width:110px;text-align:center}
