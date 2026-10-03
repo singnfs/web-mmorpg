@@ -35,7 +35,7 @@ const NODES={
 const SHOP=[["Healing Herb",50,"+35 HP","item"],["Rusty Dagger",150,"+5 ATK","item"],["Leather Vest",120,"+4 DEF","item"],["Iron Sword",400,"+9 ATK","item"],["Knight Helm",300,"+10 DEF","item"],["Pickaxe",250,"Tool Mining","tool"],["Axe",250,"Tool Woodcutting","tool"],["Fishing Rod",250,"Tool Fishing","tool"],["Shovel",300,"Tool Treasure","tool"],["Wooden Shield",120,"+6 DEF","item"],["Leather Boots",90,"+4 DEF","item"],["Leather Gloves",90,"+3 DEF","item"]];
 const FLAVOR=["Seorang petani memberimu sebuah apel.","Kamu melihat merpati membawa surat kosong.","Kamu tersandung akar pohon. Untung tidak ada yang lihat.","Seorang pedagang berbisik: harga Healing Herb naik besok.","Awan di atas kepalamu berbentuk seperti Slime."];
 
-const def=()=>({name:"",level:1,xp:0,gold:0,hp:100,maxHp:100,str:10,def:5,dex:5,steps:0,kills:0,inv:[],eq:{weapon:null,armor:null},energy:100,qe:50,tools:{},party:[],loc:0,pts:0,pots:{exp:2,rar:1},pa:{},tx:0,bk:0,bank:0,feed:[],aw:{},joined:Date.now(),qd:{},qc:0,au:0,ap:[],sk:{Mining:[1,0],Woodcutting:[1,0],Fishing:[1,0],Treasure:[1,0]},q:{steps:0,kills:0,gathers:0}});
+const def=()=>({name:"",level:1,xp:0,gold:0,hp:100,maxHp:100,str:10,def:5,dex:5,steps:0,kills:0,inv:[],eq:{weapon:null,armor:null},energy:100,qe:50,tools:{},party:[],loc:0,pts:0,craft:[1,0],npc:{},vis:{0:1},pots:{exp:2,rar:1},pa:{},tx:0,bk:0,bank:0,feed:[],aw:{},joined:Date.now(),qd:{},qc:0,au:0,ap:[],sk:{Mining:[1,0],Woodcutting:[1,0],Fishing:[1,0],Treasure:[1,0]},q:{steps:0,kills:0,gathers:0}});
 
 // UTIL
 function rand(a,b){return Math.floor(Math.random()*(b-a+1))+a}
@@ -226,7 +226,7 @@ function fight(kind){
 function win(msg){
  if(enemy.arena)return arenaWin(msg);
  const g=(Math.round(rand(enemy.gold[0],enemy.gold[1])*enemy.m)),x=(Math.round(rand(enemy.xp[0],enemy.xp[1])*enemy.m));
- addGold(g);const lv=addXP(x);s.kills++;s.q.kills++;if(enemy.boss)s.bk++;
+ addGold(g);const lv=addXP(x);s.kills++;s.npc=s.npc||{};s.npc[enemy.name.replace(/^\W+/,"")]=1;s.q.kills++;if(enemy.boss)s.bk++;
  let d="";
  if(chance(enemy.boss?1:.35)){const n=enemy.drop[rand(0,enemy.drop.length-1)];s.inv.push(n);d=` Drop: ${nm(n)}.`}
  if(chance(.08)){const n=rollItem();s.inv.push(n);d+=` Bonus: ${nm(n)}!`}
@@ -259,7 +259,7 @@ function buy(i){
  if(s.gold<p)return toast("❌ Gold tidak cukup!");
  if(t==="tool"&&s.tools[n])return toast("Sudah dimiliki");
  s.gold-=p;
- if(t==="tool")s.tools[n]=1;else s.inv.push(n);
+ if(t==="tool")s.tools[n]=1;else s.inv.push(n);s.buys=(s.buys||0)+1;
  save();toast("🛒 Beli "+n);openPanel("shop");
 }
 
@@ -274,7 +274,7 @@ function openAdminPanel(){
 
 function openPanel(type){
  const m=document.getElementById("modal"),t=document.getElementById("modalTitle"),b=document.getElementById("modalBody");
- let h="";m.classList.toggle("full",type==="battle");m.classList.toggle("page",["char","profile","hub","inventory","shops","shop","town","loc","settings","party","myparty","leader","lbview","boards","social","events"].includes(type));
+ let h="";m.classList.toggle("full",type==="battle");m.classList.toggle("page",["char","profile","hub","inventory","shops","shop","town","loc","settings","party","myparty","leader","lbview","boards","social","events","guilds","allguilds","tasks","craft","collect"].includes(type));
  if(type==="stats"){
   t.textContent="";
   const cr=(a,v,m)=>`<div class=cm-row><b>${a}</b><span><b>${v.toLocaleString()}</b> / ${m.toLocaleString()}</span></div>`;
@@ -391,6 +391,33 @@ function openPanel(type){
  }else if(type==="social"){
   t.textContent="Social Media";
   h=`<div class=tlist><button onclick="toast('Discord segera hadir')"><span>👾</span>Discord<i class="fa-solid fa-caret-right"></i></button><button onclick="toast('Instagram segera hadir')"><span>📸</span>Instagram<i class="fa-solid fa-caret-right"></i></button></div><div class=tlist><button onclick="toast('Road map segera hadir')"><span>🗺️</span>StepQuest Road Map<i class="fa-solid fa-caret-right"></i></button></div>`;
+ }else if(type==="guilds"){
+  t.textContent="Guilds";
+  h=`<div class=card2 style="padding:0;background:#1c1c1f"><div style="padding:16px"><b>${s.guild?s.guild:"No Guild"}</b><br><span style="color:#aaa">${s.guild?"Kamu anggota guild ini":"You are not in a guild"}</span></div><div class=gbtns><button class=mini2 onclick="openPanel('allguilds')">Find a Guild</button><button class=mini2 onclick="toast('Tidak ada undangan')">Invites</button><button class=mini2 onclick="createGuild()">Create a Guild</button></div></div>`
+   +`<div class=tsec>More</div><div class=tlist><button onclick="openPanel('allguilds')"><span>🏰</span>All Guilds</button><button onclick="toast('Guild Wars segera hadir')"><span>🗡️</span>Guild Wars</button></div>`
+   +`<div class=tsec>Leaderboards</div><div class=tlist><button onclick="openPanel('allguilds')"><span>🏆</span>Seasons</button><button onclick="openPanel('allguilds')"><span>🏆</span>Legacy</button></div>`;
+ }else if(type==="allguilds"){
+  t.textContent="All Guilds";
+  h=`<div class=tlist>`+GUILDS.map(([n,tag,m],i)=>`<button onclick="joinGuild(${i})"><span>${["🥇","🥈","🥉"][i]||"🛡️"}</span><span class=pp><b>${n}</b><small style="color:#aaa">[${tag}] · ${m} members</small></span><em class=free>${s.guild===n?"Joined":"Join"}</em></button>`).join("")+`</div>`;
+ }else if(type==="tasks"){
+  t.textContent="Tasks";
+  const P=["daily","weekly","monthly"][ttab],T=taskState(P),done=T.list.filter(x=>x.cur>=x.n).length,pct=Math.round(done/5*100),R=TREW[P];
+  h=tabs(["DAILY","WEEKLY","MONTHLY"],ttab,"taskTab")+`<div class=tsec>Completion Chest</div><div class="card2 trow"><span class=ti>🧰</span><div style="flex:1"><div class=cm-row style="margin:0"><span><b>${done}</b> / 5 tasks completed</span><span>${pct}%</span></div>${pbar(done,5,"#0f9d6e")}<small>${T.chest?"Chest sudah diambil":`Redeem this chest to get 💎 ${R[2]} diamonds`}</small>${done>=5&&!T.chest?`<br><button class=mini2 style="margin-top:8px" onclick="claimChest('${P}')">Redeem</button>`:""}</div></div>`
+   +`<div class=tsec>Tasks</div><div class=elist>`+T.list.map((x,i)=>`<div class="trow tk"><span class=ti>${x.ico}</span><div style="flex:1"><div>${x.txt}</div>${pbar(Math.min(x.cur,x.n),x.n,"#0f9d6e")}<div class=tmeta><b>${Math.min(x.cur,x.n).toLocaleString()}</b> / ${x.n.toLocaleString()} ✨ ${R[0].toLocaleString()} EXP 🗝️ 2x ${R[1]} Keys</div>${x.got?`<button class=mini2 disabled>Claimed ✔</button>`:x.cur>=x.n?`<button class=mini2 style="background:#0f4a36" onclick="claimTask('${P}',${i})">Claim</button>`:`<button class=mini2 onclick="${x.go}">Proceed ›</button>`}</div></div>`).join("")+`</div>`
+   +`<p class=hint>New tasks in ${untilTxt(T.end)}</p>`;
+ }else if(type==="craft"){
+  t.textContent="Crafting";
+  const have=commonMats(),need=15*cq,ok=have>=need&&s.energy>=cq;
+  h=`<div class=tsec>What type of items do you want to craft?</div><div class=cbox>Common Item</div>`
+   +`<div class=tsec>How many items do you want to craft?</div><div class=sp-in><input type=number min=1 value=${cq} onchange="cq=Math.max(1,+this.value||1);openPanel('craft')"><button onclick="cq=Math.max(1,cq-1);openPanel('craft')">−</button><button onclick="cq++;openPanel('craft')">+</button></div>`
+   +`<div class=tsec>Requirements</div><div class=crow><span>🎒</span>Common Materials<em style="color:${have>=need?"#4cd964":"#ff6b6b"}">${have>=need?"✔":"✖"} ${have}/${need}</em></div>`
+   +`<div class=tsec>Cost</div><div class=crow><span>⚡</span>Energy cost<em>${cq}</em></div>`
+   +`<div class=tsec>Outcome</div><div class=crow><span>🔨</span>Crafting EXP<em>${15*cq}</em></div><div class=crow><span>✨</span>Character EXP<em>${cq*s.level*5}</em></div><div class=crow><span>🕒</span>Crafting Level<em>${s.craft[0]}</em></div>`
+   +`<button class=fight style="background:${ok?"#4f46e5":"#2a2a6a"};margin-top:16px" ${ok?"":"disabled"} onclick="doCraft()">Craft ${cq}x</button><p class=hint>Material Common (Slime Core, Iron Ore, Oak Log, dll) didapat dari jalan & gathering.</p>`;
+ }else if(type==="collect"){
+  t.textContent="Collections";
+  const u=[...new Set(s.inv.concat(Object.values(s.eq).filter(Boolean)))],c=[["Avatars","🧙",1],["Collectables","🔮",u.filter(n=>ITEMS[n]&&ITEMS[n][1]==="mat").length],["Items","🛡️",u.filter(n=>ITEMS[n]&&!["mat","potion"].includes(ITEMS[n][1])).length],["Sprites","🐾",s.party.length],["Backgrounds","🌄",Object.keys(s.vis||{0:1}).length],["Cards","🃏",0],["Events","🎁",0],["NPCs","👹",Object.keys(s.npc||{}).length]];
+  h=`<div class=tsec>Your Collection</div><div class=tlist>`+c.map(([n,i,v])=>`<button onclick="toast('${n}: ${v} dikoleksi')"><span>${i}</span>${n}<em>${v}</em></button>`).join("")+`</div>`;
  }else if(type==="events"){
   t.textContent="Events";
   h=`<div class="banner ev"><h1>Events</h1><p>StepQuest mengadakan banyak event yang bisa kamu ikuti. Cek daftar event mendatang di bawah!</p></div><div class=tlist><button onclick="toast('Belum dimulai')"><span>🎃</span>Halloween 2026<em>Mon Oct 19 2026</em></button><button onclick="toast('Belum dimulai')"><span>🎄</span>Winter Holidays 2026<em>Mon Dec 14 2026</em></button></div>`;
@@ -406,6 +433,31 @@ let lbKey="Steps";
 function potLeft(k){const l=(s.pa[k]||0)-Date.now();return l>0?`${Math.floor(l/60000)}:${String(Math.floor(l/1000)%60).padStart(2,"0")} left`:""}
 function usePot(k){if(s.pots[k]<1)return toast("Potion habis");s.pots[k]--;s.pa[k]=Math.max(Date.now(),s.pa[k]||0)+(k==="exp"?5:15)*60000;save();toast(k==="exp"?"+5% Experience aktif":"+5% Rarity Rate aktif");openPanel("potions")}
 function renameChar(){const n=prompt("Username baru:",s.name);if(n&&n.trim()){s.name=n.trim();save();toast("Nama diganti")}}
+const GUILDS=[["Simple Knights","SK",48],["The Step Lords","TSL",50],["Rainbow Guild","BRG",37],["Phi Order","Φ",42],["Night Foxes","RF",29]];
+function createGuild(){if(s.gold<5000)return toast("Butuh 5,000 gold");const n=prompt("Nama guild:");if(!n)return;s.gold-=5000;s.guild=n.trim();save();openPanel("guilds")}
+function joinGuild(i){s.guild=GUILDS[i][0];save();toast("Bergabung dengan "+s.guild);openPanel("guilds")}
+let ttab=0,cq=1;
+const TREW={daily:[600,"Bronze",5],weekly:[1800,"Silver",15],monthly:[2520,"Gold",35]};
+const TDEF={daily:[["🥾","Take 150 steps when travelling.","steps",150,"closePanel()"],["⚔️","Kill 15 NPCS while travelling.","kills",15,"closePanel()"],["⭐","Successfully perform 5 quests.","quests",5,"openPanel('quests')"],["⛏️","Gather 10 materials while travelling.","gathers",10,"closePanel()"],["🔨","Craft 2 items.","crafts",2,"openPanel('craft')"]],
+ weekly:[["🔨","Craft 12 items.","crafts",12,"openPanel('craft')"],["📜","Complete 3 daily tasks.","dtasks",3,"taskTab(0)"],["🗡️","Kill 175 NPCS in the Battle Arena or while travelling.","kills",175,"openPanel('hub')"],["🐈",'Successfully perform the quest "Selamatkan kucing" 50 times.',"cat",50,"openQuest(0)"],["🥾","Take 1,785 steps when travelling.","steps",1785,"closePanel()"]],
+ monthly:[["🎣","Gather 625 materials while travelling (Fishing, Woodcutting, Treasure, Mining).","gathers",625,"closePanel()"],["🔨","Craft 105 items.","crafts",105,"openPanel('craft')"],["🥾","Take 6,595 steps when travelling.","steps",6595,"closePanel()"],["🛒","Purchase 390 items from the market.","buys",390,"openPanel('shops')"],["🗡️","Kill 650 NPCS in the Battle Arena or while travelling.","kills",650,"openPanel('hub')"]]};
+function ctr(){return {steps:s.steps,kills:s.kills,gathers:s.q.gathers,crafts:s.cr||0,buys:s.buys||0,quests:Object.values(s.qd).reduce((a,b)=>a+b,0),cat:s.qd[0]||0,dtasks:s.dt||0}}
+function periodEnd(P){const d=new Date();if(P==="daily")return new Date(d.getFullYear(),d.getMonth(),d.getDate()+1).getTime();if(P==="weekly")return new Date(d.getFullYear(),d.getMonth(),d.getDate()+(7-((d.getDay()+6)%7))).getTime();return new Date(d.getFullYear(),d.getMonth()+1,1).getTime()}
+function taskState(P){s.tk=s.tk||{};let T=s.tk[P];if(!T||Date.now()>=T.end){T=s.tk[P]={end:periodEnd(P),base:ctr(),got:[],chest:0};save()}
+ const c=ctr();return {...T,list:TDEF[P].map(([ico,txt,k,n,go],i)=>({ico,txt,n,go,cur:c[k]-(T.base[k]||0),got:T.got.includes(i)}))}}
+function claimTask(P,i){const T=s.tk[P];if(T.got.includes(i))return;T.got.push(i);addXP(TREW[P][0]);s.keys=s.keys||{};s.keys[TREW[P][1]]=(s.keys[TREW[P][1]]||0)+2;if(P==="daily")s.dt=(s.dt||0)+1;save();toast(`+${TREW[P][0]} EXP & 2x ${TREW[P][1]} Keys`);openPanel("tasks")}
+function claimChest(P){s.tk[P].chest=1;s.dia=(s.dia||0)+TREW[P][2];save();toast(`💎 +${TREW[P][2]} diamonds`);openPanel("tasks")}
+function taskTab(i){ttab=i;openPanel("tasks")}
+function untilTxt(t){let x=Math.max(0,Math.floor((t-Date.now())/1000));const d=Math.floor(x/86400),h=Math.floor(x%86400/3600),m=Math.floor(x%3600/60),sec=x%60;return `${d} days, ${h} hours, ${m} minutes, and ${sec} seconds`}
+function commonMats(){return s.inv.filter(n=>ITEMS[n]&&ITEMS[n][1]==="mat"&&ITEMS[n][0]===0).length}
+function doCraft(){
+ const need=15*cq;if(commonMats()<need)return toast("Material kurang");if(s.energy<cq)return toast("⚡ Energy tidak cukup");
+ let r=need;s.inv=s.inv.filter(n=>{if(r>0&&ITEMS[n]&&ITEMS[n][1]==="mat"&&ITEMS[n][0]===0){r--;return false}return true});
+ const pool=Object.keys(ITEMS).filter(k=>ITEMS[k][0]===0&&!["mat","potion"].includes(ITEMS[k][1])),got=[];
+ for(let i=0;i<cq;i++){const n=pool[rand(0,pool.length-1)];s.inv.push(n);got.push(n)}
+ s.energy-=cq;s.cr=(s.cr||0)+cq;s.craft[1]+=15*cq;while(s.craft[1]>=50*s.craft[0]){s.craft[1]-=50*s.craft[0];s.craft[0]++}addXP(cq*s.level*5);
+ save();toast("🔨 Crafted: "+got.join(", "));openPanel("craft");
+}
 function closePanel(){const m=document.getElementById("modal");m.classList.add("hidden");m.classList.remove("full","page")}
 
 // MENU SAMPING (hamburger)
@@ -475,7 +527,7 @@ function openQuest(i){
   +`<button class=fight style="background:#4f46e5;margin-top:16px" onclick="doQuest(${i})">Perform</button><button class="fight alt" style="margin-top:8px" onclick="openPanel('quests')">Close</button>`;
  const m=document.getElementById("modal");m.classList.remove("full","page");m.classList.remove("hidden");
 }
-function goLoc(i){if(LOCS[i][1]>s.level)return toast("Level kurang");s.loc=i;save();toast("Tiba di "+LOCS[i][0]);openPanel("loc")}
+function goLoc(i){if(LOCS[i][1]>s.level)return toast("Level kurang");s.loc=i;s.vis=s.vis||{};s.vis[i]=1;save();toast("Tiba di "+LOCS[i][0]);openPanel("loc")}
 function healer(){
  const c=5*s.level;
  if(s.hp>=s.maxHp)return toast("HP penuh");
