@@ -377,3 +377,9 @@ body{background:radial-gradient(circle at 85% 75%,rgba(120,90,20,.22),transparen
 .aw small{color:#aaa}.aw em{font-style:normal;text-align:center;background:#2a2a2d;border-radius:8px;padding:6px 10px;font-weight:600;font-size:13px}
 .aw.ok em{background:#0f4a36;color:#d6ffe9}
 .sortbar button.on{width:auto;height:auto;display:block;border-radius:0;background:#222}
+.iti{width:40px;height:40px;object-fit:contain;image-rendering:pixelated;flex-shrink:0;background:#1a1a1d;border-radius:8px;padding:4px}
+.iti.sm{width:20px;height:20px;padding:0;background:none;vertical-align:-4px;margin-right:4px}
+.iti.lg{width:44px;height:44px}
+.er{gap:12px}.ir-top{align-items:flex-start}
+.lr{display:flex;gap:10px;align-items:center}
+.dbl{font-size:11px;color:#8b8bff;text-decoration:none;margin-left:4px;white-space:nowrap}
