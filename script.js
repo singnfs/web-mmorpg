@@ -67,7 +67,7 @@ function rollItem(minR=0,lvl){
 }
 
 const PAGE=document.body.dataset.page||"";
-const PAGE_FILE={home:"index.html",hub:"battle.html",town:"town.html",quests:"quests.html",inventory:"inventory.html",stats:"profile.html",char:"character.html",tasks:"tasks.html",craft:"crafting.html",prof:"profession.html",collect:"collections.html",awards:"awards.html",market:"market.html",guilds:"guilds.html",leader:"leaderboards.html",party:"party.html",notes:"notifications.html",diamond:"diamond-store.html",settings:"settings.html",events:"events.html",support:"support.html",about:"about.html",admin:"admin.html"};
+const PAGE_FILE={home:"index.html",hub:"battle.html",town:"town.html",quests:"quests.html",inventory:"inventory.html",stats:"profile.html",char:"character.html",tasks:"tasks.html",craft:"crafting.html",prof:"profession.html",collect:"collections.html",awards:"awards.html",market:"market.html",guilds:"guilds.html",leader:"leaderboards.html",party:"party.html",notes:"notifications.html",diamond:"diamond-store.html",settings:"settings.html",events:"events.html",support:"support.html",about:"about.html",admin:"admin.html",legacy:"legacy.html"};
 function navGo(p){const f=PAGE_FILE[p];if(!f)return openPanel(p);if(PAGE===p||(p==="home"&&!PAGE))return p==="home"?closePanel():openPanel(p);location.href=f}
 function doLogout(){localStorage.removeItem("sq_user");sessionStorage.removeItem("sq_akey");location.href="index.html"}
 function doLogin(auto){
@@ -293,7 +293,7 @@ function openAdminPanel(){navGo("admin")}
 function openPanel(type){
  lastPanel=type;
  const m=document.getElementById("modal"),t=document.getElementById("modalTitle"),b=document.getElementById("modalBody");
- let h="";m.classList.toggle("full",type==="battle");m.classList.toggle("page",["char","profile","hub","inventory","shops","shop","town","loc","settings","party","myparty","leader","lbview","boards","social","events","guilds","allguilds","tasks","craft","collect","prof","bank","mahol","chests","support","diamond","awards","market","online","pvp","avatars","notes","about","admin","chat"].includes(type)||(!!PAGE&&type!=="battle"));
+ let h="";m.classList.toggle("full",type==="battle");m.classList.toggle("page",["char","profile","hub","inventory","shops","shop","town","loc","settings","party","myparty","leader","lbview","boards","social","events","guilds","allguilds","tasks","craft","collect","prof","bank","mahol","chests","support","diamond","awards","market","online","pvp","avatars","notes","about","admin","chat","legacy"].includes(type)||(!!PAGE&&type!=="battle"));
  if(type==="stats"){
   t.textContent="";
   const cr=(a,v,m)=>`<div class=cm-row><b>${a}</b><span><b>${v.toLocaleString()}</b> / ${m.toLocaleString()}</span></div>`;
@@ -309,11 +309,12 @@ function openPanel(type){
   h=`<div class=pf-ban></div><div class=pf-av style="margin-top:-60px">${avHTML()}</div><div class=pf-n><b>${s.name}</b></div><div class=pf-lv>Level ${s.level}</div><button class=fight style="background:#4f46e5" onclick="profTab(0)">View Public Profile</button>`
    +`<div class=gm-sec><span>Your Stats</span></div>${s.pts?`<div class=card2 style="border:1px solid #4f46e5">You have <b>${s.pts}</b> points remaining</div>`:""}${sr("str","Strength",atk())}${sr("def","Defence",dfn())}${sr("dex","Dexterity",s.dex)}<div class=card2><small>spATK Damage</small><br><b>+120%</b></div>`
    +`<div class=gm-sec><span>Skills</span></div>`+Object.entries(s.sk).map(([k,[l]])=>`<div class=srow><span>${NODES[k].icon} ${k}</span><span>Level ${l}</span></div>`).join("")
-   +`<div class=gm-sec><span>Progress</span></div>${pr("Energy",s.energy,100)}${pr("Quest Points",s.qe,50)}${pr("Awards",Object.keys(s.aw).length,AWARDS.length)}`;
+   +`<div class=gm-sec><span>Progress</span></div>${pr("Energy",s.energy,100)}${pr("Quest Points",s.qe,50)}${pr("Awards",Object.keys(s.aw).length,AWARDS.length)}`
+   +`<div class=gm-sec><span>Danger Zone</span></div><button class="fight alt" style="background:#3a1a1a;color:#ff8a8a" onclick="navGo('legacy')"><i class="fa-solid fa-dna" style="margin-right:6px"></i>Legacy Mode${(s.legacy&&s.legacy.list.length)?` (x${s.legacy.list.length})`:""}</button>`;
  }else if(type==="profile"){
   t.textContent="Profile";
   const row=(a,v)=>`<div class=srow><span>${a}</span><b>${v}</b></div>`,nA=Object.keys(s.aw).length;let b="";
-  if(ptab===0)b=`<div class=pf-ban></div><div class=pf-av style="margin-top:-60px">${avHTML()}</div><div class=pf-n><b>${s.name}</b> <small>#${s.name.length*1337%9000+1000}</small> <span class=on></span></div><div class=pf-lv>Level ${s.level}</div><div class=pf-pill>Online Now</div><div class="card2" style="text-align:center">“There is no motto for this player.”</div><div class=gm-sec><span>Feed</span></div><div class=card2>${s.feed.slice(0,3).map(f=>`<div class=srow><span><b>${f[0]}</b><br><small>${ago(f[1])}</small></span></div>`).join("")||"Belum ada aktivitas."}</div>`;
+  if(ptab===0)b=`<div class=pf-ban></div><div class=pf-av style="margin-top:-60px">${avHTML()}</div><div class=pf-n><b>${s.name}</b> <small>#${s.name.length*1337%9000+1000}</small> <span class=on></span></div><div class=pf-lv>Level ${s.level}</div><div class=pf-pill>Online Now</div>${s.legacy&&s.legacy.list.length?`<div class=pf-pill style="background:#2a1830;color:#d9a3ff;margin-top:6px">🧬 Legacy x${s.legacy.list.length}</div>`:""}<div class="card2" style="text-align:center">“There is no motto for this player.”</div><div class=gm-sec><span>Feed</span></div><div class=card2>${s.feed.slice(0,3).map(f=>`<div class=srow><span><b>${f[0]}</b><br><small>${ago(f[1])}</small></span></div>`).join("")||"Belum ada aktivitas."}</div>`;
   else if(ptab===1)b=`<div class=card2><small>Strength</small><br><b>${atk()}</b></div><div class=card2><small>Defence</small><br><b>${dfn()}</b></div><div class=card2><small>Dexterity</small><br><b>${s.dex}</b></div><div class=card2><small>Health</small><div class=cm-row><b>${s.hp} <span style="color:#888">/ ${s.maxHp}</span></b><b>${Math.round(s.hp/s.maxHp*100)}%</b></div>${pbar(s.hp,s.maxHp,"#e84040")}</div>`
    +[["Gold",s.gold.toLocaleString()],["Steps",s.steps],["Awards",nA],["NPC Kills",s.kills],["Boss Kills",s.bk],["Quests Completed",s.qc],["Total EXP",s.tx.toLocaleString()],["Join Date",new Date(s.joined).toLocaleDateString()]].map(([a,v])=>row(a,v)).join("")
    +Object.entries(s.sk).map(([k,[l]])=>row(NODES[k].icon+" "+k,"Level "+l)).join("");
@@ -370,9 +371,10 @@ function openPanel(type){
   h=`<div class=gm-sec><span>User</span></div><div class=card2><b>Quest Points</b>${pbar(s.qe,50,"#5b9cff")}<div class=cm-row><span><b style="color:#5b9cff">${s.qe}</b>/50</span><span style="color:#aaa">+1 / 10 dtk</span></div></div>`
    +`<div class=gm-sec><span>Bonuses</span></div><div class=elist><div class=er><div>✨ Experience</div><b>+${(s.qc*.5).toFixed(1)}%</b></div><div class=er><div>🪙 Gold</div><b>+${(s.qc*.5).toFixed(1)}%</b></div></div>`
    +`<div class=qf>${F.map((x,i)=>`<button class="${i===qf?"sel":""}" onclick="qf=${i};openPanel('quests')">${x}</button>`).join("")}</div>`
-   +QUESTS.map((q,i)=>[q,i]).reverse().map(([q,i])=>{const d=s.qd[i]||0,done=d>=q[3],lock=q[0]>s.level;
+   +`<p class=hint>${QUESTS.length} quests (Lv 1 – ${QUESTS[QUESTS.length-1][1]}) · data asli SimpleMMO</p>`
+   +QUESTS.map((q,i)=>[q,i]).reverse().map(([q,i])=>{const d=s.qd[i]||0,done=d>=q[4],lock=q[1]>s.level;
     if(qf===1&&(done||!d)||qf===2&&!done||qf===3&&done)return "";
-    return `<button class="qc ${done?"done":""} ${lock?"lock":""}" onclick="${lock?`toast('Butuh Level ${q[0]}')`:`openQuest(${i})`}"><span class=qi>${lock?"🔒":QICO[i]}</span><span class=qb><b>${q[2]}</b><span class=qlv>Level ${q[0]}</span></span><span class=ql>${done?"✔ Done":(q[3]-d)+" Left"}</span></button>`}).join("");
+    return `<button class="qc ${done?"done":""} ${lock?"lock":""}" onclick="${lock?`toast('Butuh Level ${q[1]}')`:`openQuest(${i})`}"><span class=qi>${lock?"🔒":q[0]}</span><span class=qb><b>${q[3]}</b><span class=qlv>Level ${q[1]}</span></span><span class=ql>${done?"✔ Done":(q[4]-d)+" Left"}</span></button>`}).join("");
  }else if(type==="arena"){
   t.textContent="";m.classList.remove("page");
   h=`<div class=al>`+ARENA.map((a,i)=>{const pg=s.ap[i]||0,st=i<s.au?"done":i===s.au?"cur":"lk";return `<div class="ar ${st}" onclick="${st==="lk"?"toast('Selesaikan tier sebelumnya')":`arenaFight(${i})`}"><span class=ri>${["⚔️","🥉","🥈","🥇","💠","☠️","⛧","🔮","🌋","☄️","✴️"][i]}</span><b>${a[0]}</b><em>${st==="done"?"Completed":st==="cur"?`${a[2]-pg}<br>Remaining`:"Locked"}</em></div>`}).join("")+`</div><button class="fight alt" style="margin-top:14px;background:#1a1a1c" onclick="closePanel()">Close</button>`;
@@ -513,6 +515,15 @@ function openPanel(type){
   h=`<select class=sel onchange="nf=+this.value;openPanel('notes')">${NCAT.map((c,i)=>`<option value=${i} ${i===nf?"selected":""}>${c}</option>`).join("")}</select>`
    +(L.length?`<div class=elist>`+L.map(n=>`<div class="er nt"><span class=ri>❗</span><div style="flex:1">${n[1]}<br><small>${ago(n[2])}</small></div><em class=ntag>${n[0]==="Player Interaction"?"Player":n[0]}</em></div>`).join("")+`</div>`:`<p class=hint>Belum ada notifikasi.</p>`)
    +((s.notes||[]).length?`<button class="fight alt" style="margin-top:10px" onclick="s.notes=[];save();openPanel('notes')">Hapus semua</button>`:"");
+ }else if(type==="legacy"){
+  t.textContent="Legacy";
+  const L=s.legacy&&s.legacy.list||[];
+  h=`<div class="warn" style="margin-bottom:14px">⚠️ This action is irreversible. Proceed with caution.</div>`
+   +`<p class=gm-p>Legacy mode allows you to reset your account to <b>level 1</b> for a new challenge. Every time you reset, your current stats are saved to your family tree.</p>`
+   +`<div class=gm-sec><span>Current</span></div><div class=card2><div class=cm-row style="margin:0"><b>Level ${s.level}</b><span>STR ${atk().toLocaleString()} · DEF ${dfn().toLocaleString()} · DEX ${dexT().toLocaleString()}</span></div></div>`
+   +`<div class=gm-sec><span>Legacy Lite Mode</span></div><div class=card2><p style="margin:0 0 10px">Simply resets your level and stats to level 1. Your inventory, gold, collections and more remain intact.</p><ul class=credits style="margin:0 0 12px"><li>Level, Health, Strength, Dexterity, Defence</li></ul><button class="fight alt" style="background:#2a2a6a" onclick="legacyDo('lite')">Enter Legacy Lite</button></div>`
+   +`<div class=gm-sec><span>Legacy Pro Mode</span></div><div class=card2><p style="margin:0 0 10px">Resets your whole account to a certain degree — stats, gold, inventory, bank, crafting, gathering, quests and arena progress.</p><ul class=credits style="margin:0 0 12px"><li>Level, Health, Strength, Dexterity, Defence, Gold</li><li>Inventory, Collections, Market Listings</li><li>Bank, Crafting Level, Gathering Level</li><li>Quest Completions, Battle Arena Leaderboard Progress</li><li>Profession Progress</li></ul><button class="fight" style="background:#7a1f1f" onclick="legacyDo('pro')">Enter Legacy Pro</button></div>`
+   +`<div class=gm-sec><span>Family Tree</span></div>`+(L.length?L.map(x=>`<div class=loot><span>${x.mode==="pro"?"🩸":"🧬"} <b>Level ${x.level}</b><br><small>${x.mode==="pro"?"Legacy Pro":"Legacy Lite"} · STR ${x.str.toLocaleString()} DEF ${x.def.toLocaleString()} DEX ${x.dex.toLocaleString()}</small></span><small>${ago(x.date)}</small></div>`).join(""):`<p class=hint>If this is your first reset, you will not have a family tree option yet. Your current level will become your first legacy point.</p>`);
  }else if(type==="about"){
   t.textContent="About";
   const L=[["Game Rules","fa-shield-halved","Hormati pemain lain, jangan spam chat, jangan memakai bot/script curang, dan jangan menjual akun."],["Terms of Service","fa-triangle-exclamation","StepQuest adalah proyek fan-made gratis. Data bisa direset kapan saja selama masa pengembangan."],["Privacy Policy","fa-eye-slash","Progress karakter disimpan di browser kamu. Server hanya menyimpan nama, level, stat publik, guild, listing market, dan chat."],["Cookie Policy","fa-circle-exclamation","Kami hanya memakai localStorage untuk menyimpan save game dan sesi login. Tidak ada cookie pelacak."]];
@@ -598,6 +609,18 @@ function chatCh(c){chatC=c;document.querySelectorAll(".chat-tabs button").forEac
 function renderChat(){const el=document.getElementById("chatList");if(!el)return;const L=CHAT[chatC]||[];el.innerHTML=!SOCK?`<p class=hint>Tidak terhubung ke server.</p>`:L.length?L.map(m=>`<div class=cm><span class=cav>${avImg(m.av)}</span><div class=cb><div><b style="color:${m.mod?"#f5c518":"#ffd866"}">${esc(m.name)}</b>${m.mod?` <span class=modb>🛡️ Mod</span>`:""} <small>${new Date(m.t).toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"})}</small></div><div>${esc(m.txt)}</div></div></div>`).join(""):`<p class=hint>Belum ada pesan di ${chatC}. Sapa pemain lain!</p>`;el.scrollTop=el.scrollHeight}
 function chatSend(){const i=document.getElementById("chatTxt"),v=i.value.trim();if(!v||!SOCK)return;SOCK.emit("chat:send",{ch:chatC,txt:v,key:isAdmin?AKEY():""});i.value=""}
 let mt=0,nf=0,atab=0,aq="",art=-1,aty="",aqty=1;
+function legacyDo(mode){
+ if(!confirm(`Yakin masuk Legacy ${mode==="pro"?"Pro":"Lite"} Mode? Aksi ini TIDAK BISA dibatalkan dan mereset levelmu ke 1.`))return;
+ s.legacy=s.legacy||{list:[]};
+ s.legacy.list.unshift({level:s.level,str:atk(),def:dfn(),dex:dexT(),maxHp:s.maxHp,date:Date.now(),mode});
+ s.level=1;s.xp=0;s.str=10;s.def=5;s.dex=5;s.maxHp=100;s.hp=100;s.pts=0;
+ if(mode==="pro"){
+  s.gold=0;s.inv=[];s.eq={helmet:null,amulet:null,armor:null,weapon:null,shield:null,pet:null,greaves:null,gauntlet:null,boots:null,special:null};
+  s.bank=0;s.craft=[1,0];s.sk={Mining:[1,0],Woodcutting:[1,0],Fishing:[1,0],Treasure:[1,0]};
+  s.qd={};s.qc=0;s.au=0;s.ap=[];s.tk={};s.prof=null;
+ }
+ save();toast(`🧬 Legacy ${mode==="pro"?"Pro":"Lite"} selesai! Kamu kembali ke Level 1.`);openPanel("legacy");
+}
 function admTab(i){atab=i;openPanel("admin")}
 const AKEY=()=>sessionStorage.getItem("sq_akey")||"";
 function admSet(k,v){v=Math.max(0,Math.round(+v||0));s[k]=v;if(k==="maxHp")s.hp=Math.min(s.hp,v);save();toast(`✅ ${k} = ${v.toLocaleString()}`);openPanel("admin")}
@@ -635,7 +658,7 @@ function admWorld(){
  return `<div class=tsec>Teleport</div><div class=agrid>${LOCS.map((l,i)=>`<button class=btn-admin style="background:${i===s.loc?"#4f46e5":"#3a3a4e"}" onclick="s.loc=${i};s.vis[${i}]=1;save();toast('📍 ${l[0]}');openPanel('admin')">📍 ${l[0]}</button>`).join("")}</div>`
  +`<div class=tsec>Spawn Enemy</div><div class=agrid>${enemies.map((e,i)=>`<button class=btn-admin onclick="admSpawn(${i})">${e.ico} ${e.name}</button>`).join("")}<button class=btn-admin style="background:#7a1f1f" onclick="admSpawn(-1)">🐉 World Boss</button></div>`
  +`<div class=tsec>Battle Arena</div><div class=agrid><button class=btn-admin onclick="s.ap[s.au]=ARENA[s.au][2]-1;save();toast('1 NPC lagi untuk tier ini');openPanel('admin')">🏁 Hampir selesai tier</button><button class=btn-admin onclick="s.au=10;ARENA.forEach((a,i)=>s.ap[i]=a[2]);save();toast('Semua tier terbuka');openPanel('admin')">🔓 Buka semua tier</button><button class=btn-admin onclick="s.au=0;s.ap=[];save();openPanel('admin')">↺ Reset arena</button></div>`
- +`<div class=tsec>Quests, Tasks & Awards</div><div class=agrid><button class=btn-admin onclick="QUESTS.forEach((q,i)=>s.qd[i]=q[3]);s.qc=QUESTS.length;save();toast('Semua quest selesai');openPanel('admin')">✅ Selesaikan semua quest</button><button class=btn-admin onclick="s.qd={};s.qc=0;save();openPanel('admin')">↺ Reset quest</button><button class=btn-admin onclick="s.tk={};save();toast('Tasks direset');openPanel('admin')">↺ Reset tasks</button><button class=btn-admin onclick="AWARDS.forEach(a=>s.aw[a[0]]=Date.now());save();toast('Semua award');openPanel('admin')">🏅 Unlock semua award</button><button class=btn-admin onclick="s.aw={};save();openPanel('admin')">↺ Reset award</button><button class=btn-admin onclick="s.rw={};save();toast('Daily/Monthly reward bisa diklaim lagi');openPanel('admin')">🎁 Reset daily reward</button><button class=btn-admin onclick="sprintUntil=Date.now()+3600000;sprintTick();toast('Sprint 60 menit')">🏃 Sprint 60 menit</button><button class=btn-admin onclick="s.pa.exp=s.pa.rar=Date.now()+3600000;save();toast('Boost EXP & Rarity 1 jam')">🧪 Boost 1 jam</button></div>`
+ +`<div class=tsec>Quests, Tasks & Awards</div><div class=agrid><button class=btn-admin onclick="QUESTS.forEach((q,i)=>s.qd[i]=q[4]);s.qc=QUESTS.length;save();toast('Semua quest selesai');openPanel('admin')">✅ Selesaikan semua quest</button><button class=btn-admin onclick="s.qd={};s.qc=0;save();openPanel('admin')">↺ Reset quest</button><button class=btn-admin onclick="s.tk={};save();toast('Tasks direset');openPanel('admin')">↺ Reset tasks</button><button class=btn-admin onclick="AWARDS.forEach(a=>s.aw[a[0]]=Date.now());save();toast('Semua award');openPanel('admin')">🏅 Unlock semua award</button><button class=btn-admin onclick="s.aw={};save();openPanel('admin')">↺ Reset award</button><button class=btn-admin onclick="s.rw={};save();toast('Daily/Monthly reward bisa diklaim lagi');openPanel('admin')">🎁 Reset daily reward</button><button class=btn-admin onclick="sprintUntil=Date.now()+3600000;sprintTick();toast('Sprint 60 menit')">🏃 Sprint 60 menit</button><button class=btn-admin onclick="s.pa.exp=s.pa.rar=Date.now()+3600000;save();toast('Boost EXP & Rarity 1 jam')">🧪 Boost 1 jam</button></div>`
  +`<div class=tsec>Avatar</div><div class=agrid><button class=btn-admin onclick="openPanel('avatars')">🧙 Ganti avatar</button><button class=btn-admin onclick="s.av=rand(0,AVATARS.length-1);save();openPanel('admin')">🎲 Avatar acak</button></div>`;
 }
 function admSave(){
@@ -699,28 +722,6 @@ let sprintUntil=0;
 const LOCS=[["Simpletopia",1,["Slime","Goblin","Wolf"]],["Holbeck",5,["Wolf","Dark Knight"]],["Davenport",10,["Dark Knight","Troll"]],["Ironforge",30,["Troll","Frost Giant"]],["Everwinter",50,["Frost Giant","Void Reaper"]]];
 // Battle Arena: tier, EXP modifier, syarat selesai (NPC), biaya maks (gold)
 const ARENA=[["Copper League",2,100,1000],["Bronze League",2.2,225,2500],["Silver League",2.4,500,6000],["Gold League",2.6,950,9375],["Platinum League",3,1500,11250],["Titanium League",3.5,2500,13750],["7th Circle",4,3000,16250],["Ragnarok",4.5,4000,18750],["Mount Olympus",5,5000,21250],["Rapture",5.5,6000,27000],["Nirvana",6,7500,34500]];
-// quest: level min, dex utk 100% sukses, nama, jumlah selesai, gold, exp, teks sukses, teks gagal
-const QUESTS=[
- [1,8,"Save a cat",8,5,10,"The cat is safe and sound!","You fell out of the tree."],
- [3,9,"Protect a farmer",13,10,15,"The bandits ran away!","You hurt your knee and fled."],
- [5,11,"Fight the bandits",16,15,35,"The rest of the bandits ran away.","You tripped over a rock."],
- [7,14,"Protect the town from bandits",25,25,40,"The town is safe, they built you a statue!","You were given the wrong directions."],
- [9,16,"Aid a scholar in exploring an ancient ruin",25,35,50,"The expedition went smoothly.","The scholar stepped on a trap."],
- [11,20,"Travel with a wizard and retrieve a stone",30,50,60,"You got the legendary stone!","A 25 metre dragon was waiting for you."],
- [13,21,"Save a damsel in distress",34,60,80,"You saved her.","You got robbed instead."],
- [15,23,"Help a blind man and his dog",30,70,90,"You found his dog!","You gave him mouldy bread."],
- [18,29,"Save a sick child",45,80,100,"The child recovered.","Someone else took the medicine."],
- [20,37,"Capture a live troll",38,95,105,"The troll fell asleep and was captured.","The troll woke up and you ran."],
- [25,42,"Go to the local inn and get drunk",24,105,115,"You caused absolute chaos.","You set the inn on fire."],
- [30,50,"Escort a merchant caravan",40,130,140,"The caravan arrived safely.","Bandits stole half the cargo."],
- [40,62,"Slay the swamp hydra",45,170,190,"All its heads are gone!","Two heads grew back."],
- [50,75,"Clear the haunted mine",50,220,240,"The spirits are at rest.","You ran out of torches."],
- [65,95,"Retrieve the stolen crown",55,300,320,"The king rewards you.","The thief escaped over the rooftops."],
- [80,115,"Hunt the frost wyrm",60,380,420,"The wyrm is slain!","You nearly froze to death."],
- [100,140,"Defend the city walls",70,500,560,"The siege is broken!","The gate was breached."],
- [150,200,"Close the demon portal",80,800,900,"The portal collapses.","Demons poured through."],
- [200,260,"Challenge the dragon king",90,1200,1400,"The dragon king bows to you.","You were sent flying."]
-];
 
 function pool(){return enemies.filter(e=>LOCS[s.loc][2].includes(e.name))}
 function arenaCost(i){return Math.min(ARENA[i][3],5*s.level*(i+1)+10)}
@@ -749,21 +750,20 @@ function doQuest(i){
  const q=QUESTS[i];
  if(s.qe<1)return toast("🔥 Quest Point habis");
  s.qe--;
- if(chance(Math.min(1,dexT()/q[1]))){
-  const k=(1+s.level*.25)*(1+.005*s.qc),g=Math.round(q[4]*k),x=Math.round(q[5]*k);
+ if(chance(Math.min(1,dexT()/q[2]))){
+  const k=(1+s.level*.25)*(1+.005*s.qc),g=Math.round(q[5]*k),x=Math.round(q[6]*k);
   addGold(g);addXP(x);s.qd[i]=(s.qd[i]||0)+1;
-  if(s.qd[i]===q[3]){s.qc++;toast("🏁 Quest selesai! Bonus quest +0,5%");addNote("Action",`Quest "${q[2]}" selesai!`)}else toast(`✅ ${q[6]} +${g}G +${x}XP`);
- }else toast("❌ "+q[7]);
+  if(s.qd[i]===q[4]){s.qc++;toast("🏁 Quest selesai! Bonus quest +0,5%");addNote("Action",`Quest "${q[3]}" selesai!`)}else toast(`✅ ${q[7]} +${g}G +${x}XP`);
+ }else toast("❌ "+q[8]);
  save();openQuest(i);
 }
 let qf=0;
-const QICO=["🐈","🥕","🗡️","🏘️","🏛️","🪨","🕊️","🐕","🧒","🧌","🍺","🐪","🐍","⛏️","👑","🐉","🏰","😈","🐲"];
 function openQuest(i){
- const q=QUESTS[i],d=s.qd[i]||0,k=(1+s.level*.25)*(1+.005*s.qc),p=Math.round(Math.min(1,dexT()/q[1])*100);
+ const q=QUESTS[i],d=s.qd[i]||0,k=(1+s.level*.25)*(1+.005*s.qc),p=Math.round(Math.min(1,dexT()/q[2])*100);
  document.getElementById("modalTitle").textContent="";
- document.getElementById("modalBody").innerHTML=`<div class=gm><div class=gm-ico>${QICO[i]}</div><h3 class=qt>${q[2]}</h3><div class=chips><span>Lv. ${q[0]}</span><span class="${p>=100?"ok":p>=50?"mid":"bad"}" title="${q[1]} Dexterity: 100%">${p}% Success</span></div><div class=qr>Rewards</div><div class=chips><span>✨ ${Math.round(q[5]*k)}</span><span>🪙 ${Math.round(q[4]*k)}</span></div></div>`
-  +`<div class=cm-row><b>Progress</b><span><b>${Math.min(d,q[3])}</b> / ${q[3]}</span></div>${pbar(d,q[3],"#2ecc71")}<div class=cm-row><b>Quest Points</b><span><b style="color:#5b9cff">${s.qe}</b>/50</span></div>${pbar(s.qe,50,"#5b9cff")}`
-  +(p<100?`<div class=warn>⚠️ Naikkan <b>Dexterity</b> ke ${q[1]} untuk 100% sukses.</div>`:"")
+ document.getElementById("modalBody").innerHTML=`<div class=gm><div class=gm-ico>${q[0]}</div><h3 class=qt>${q[3]}</h3><div class=chips><span>Lv. ${q[1]}</span><span class="${p>=100?"ok":p>=50?"mid":"bad"}" title="${q[2]} Dexterity: 100%">${p}% Success</span></div><div class=qr>Rewards</div><div class=chips><span>✨ ${Math.round(q[6]*k)}</span><span>🪙 ${Math.round(q[5]*k)}</span></div></div>`
+  +`<div class=cm-row><b>Progress</b><span><b>${Math.min(d,q[4])}</b> / ${q[4]}</span></div>${pbar(d,q[4],"#2ecc71")}<div class=cm-row><b>Quest Points</b><span><b style="color:#5b9cff">${s.qe}</b>/50</span></div>${pbar(s.qe,50,"#5b9cff")}`
+  +(p<100?`<div class=warn>⚠️ Naikkan <b>Dexterity</b> ke ${q[2]} untuk 100% sukses.</div>`:"")
   +`<button class=fight style="background:#4f46e5;margin-top:16px" onclick="doQuest(${i})">Perform</button><button class="fight alt" style="margin-top:8px" onclick="openPanel('quests')">Close</button>`;
  const m=document.getElementById("modal");m.classList.remove("full","page");m.classList.remove("hidden");
 }
@@ -797,7 +797,7 @@ function openGather(){
 // ===== halaman-halaman ala app SimpleMMO =====
 const SLOTS=[["helmet","Helmet"],["amulet","Amulet"],["armor","Armour"],["weapon","Weapon"],["shield","Shield"],["pet","Pet"],["greaves","Greaves"],["gauntlet","Gauntlet"],["boots","Boots"],["special","Special"]];
 const SHOPS=[["Ronwarus Fruit and Veg Shop",["Healing Herb"],"🥕"],["Caspers Emporium",SHOP_GEAR,"🧛"],["Mysterious Shop",[],"🧙"],["Mikels Beasts",[],"🐾"],["Toms Tools",["Pickaxe","Axe","Fishing Rod","Shovel"],"🔧"]];
-const AWARDS=[["Baby Steps","This player has taken 100 steps.",s=>s.steps>=100],["Butcher","This player has defeated 10 NPCs.",s=>s.kills>=10],["Checkbox","This player has completed their first quest.",s=>s.qc>=1],["Gatherer","This player has gathered 10 resources.",s=>s.q.gathers>=10],["Marathon","This player has taken 1,000 steps.",s=>s.steps>=1000],["Rich","This player has held 10,000 gold.",s=>s.gold>=10000],["Slayer","This player has defeated 100 NPCs.",s=>s.kills>=100],["Dragon Slayer","This player has defeated a world boss.",s=>s.bk>=1]];
+const AWARDS=[["Baby Steps","This player has taken 100 steps.",s=>s.steps>=100],["Butcher","This player has defeated 10 NPCs.",s=>s.kills>=10],["Checkbox","This player has completed their first quest.",s=>s.qc>=1],["Gatherer","This player has gathered 10 resources.",s=>s.q.gathers>=10],["Marathon","This player has taken 1,000 steps.",s=>s.steps>=1000],["Rich","This player has held 10,000 gold.",s=>s.gold>=10000],["Slayer","This player has defeated 100 NPCs.",s=>s.kills>=100],["Dragon Slayer","This player has defeated a world boss.",s=>s.bk>=1],["Legacy Lite","This player has reset using Legacy Lite Mode.",s=>!!(s.legacy&&s.legacy.list.some(x=>x.mode==="lite"))],["Legacy Pro","This player has reset using Legacy Pro Mode.",s=>!!(s.legacy&&s.legacy.list.some(x=>x.mode==="pro"))]];
 let itab=0,ptab=0,isort=0,curShop=0;
 function checkAwards(){if(s)AWARDS.forEach(a=>{if(!s.aw[a[0]]&&a[2](s)){s.aw[a[0]]=Date.now();toast("🏅 Award: "+a[0])}})}
 function ago(t){const m=Math.floor((Date.now()-t)/60000);return m<1?"just now":m<60?m+" minutes ago":m<1440?Math.floor(m/60)+" hours ago":Math.floor(m/1440)+" days ago"}
