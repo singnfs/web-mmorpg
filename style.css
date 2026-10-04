@@ -426,3 +426,24 @@ body[data-page] #gameScreen main,body[data-page] .scene{display:none}
 .bpg{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.bpg button{background:#262628;border:0;border-radius:8px;color:#fff;padding:14px 0;font-size:16px;cursor:pointer}
 .tlist button.lk2{opacity:.6}
 .credits{padding-left:18px;line-height:1.7;color:#ccc}.credits a{color:#8b8bff}
+
+/* ===== Public Player Profile, badges, actions, showcase ===== */
+.badgerow{display:flex;gap:10px;overflow-x:auto;padding-bottom:4px}
+.badge{flex-shrink:0;width:84px;background:#111;border:1px solid #2a2a2e;border-radius:10px;padding:10px 6px;text-align:center;cursor:help}
+.badge span{font-size:28px;display:block;margin-bottom:4px}
+.badge small{font-size:11px;color:#ccc;line-height:1.2;display:block}
+.actrow{display:flex;gap:8px;margin:8px 0}
+.aact{flex:1;background:#262628;border:0;color:#fff;border-radius:10px;padding:12px 6px;font-size:13px;font-weight:600;cursor:pointer}
+.aact:disabled{opacity:.4;cursor:not-allowed}
+.showgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.showitem{background:#111;border:1px solid #2a2a2e;border-radius:10px;padding:10px 4px;text-align:center}
+.showitem .iti{margin:0 auto 4px}
+.showitem small{font-size:10px;color:#ccc;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* Community Challenges / Town Supply rows */
+.crow2{display:flex;gap:12px;align-items:center;padding:10px 0;border-bottom:1px solid #222}
+.crow2>span{font-size:26px;width:34px;text-align:center}
+.crow2 em{font-style:normal;float:right;color:#2ecc71;font-weight:600;font-size:13px}
+/* Inventory Inspect */
+.dgrid3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:6px}
+.dgrid3 div{background:#111;border:1px solid #222;border-radius:8px;padding:8px;text-align:center}
+.dgrid3 small{color:#888;font-size:11px}

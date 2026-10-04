@@ -15,7 +15,7 @@ const io = new Server(server, { cors: { origin: '*' } });
 // ===== Penyimpanan sederhana (JSON di folder data/) =====
 const DATA_DIR = path.join(__dirname, 'data');
 const DATA_FILE = path.join(DATA_DIR, 'db.json');
-let db = { known: {}, listings: [], credits: {}, guilds: {}, nextId: 1 };
+let db = { known: {}, listings: [], credits: {}, guilds: {}, rep: {}, comments: {}, nextId: 1 };
 try { db = Object.assign(db, JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'))); } catch (e) { /* belum ada data */ }
 let saveTimer = null;
 function persist() {
@@ -37,7 +37,20 @@ function profileOf(p) {
     return {
         name: clean(p.name), level: num(p.level), str: num(p.str), def: num(p.def), dex: num(p.dex),
         maxHp: num(p.maxHp), av: num(p.av), guild: clean(p.guild, 30), steps: num(p.steps), gold: num(p.gold),
-        kills: num(p.kills), pk: num(p.pk), qc: num(p.qc), bk: num(p.bk)
+        kills: num(p.kills), pk: num(p.pk), qc: num(p.qc), bk: num(p.bk),
+        bio: clean(p.bio, 140), showcase: Array.isArray(p.showcase) ? p.showcase.slice(0, 9).map(x => clean(x, 60)) : []
+    };
+}
+function knownOf(name) {
+    const k = db.known[String(name || '').toLowerCase()];
+    if (!k) return null;
+    const onlineNow = Object.values(online).some(p => p.name.toLowerCase() === k.name.toLowerCase());
+    const guild = Object.entries(db.guilds).find(([, g]) => g.members.some(m => m.toLowerCase() === k.name.toLowerCase()));
+    return {
+        ...k, online: onlineNow,
+        guildInfo: guild ? { name: guild[0], tag: guild[1].tag } : null,
+        rep: db.rep && db.rep[k.name.toLowerCase()] || { up: 0, down: 0 },
+        comments: (db.comments && db.comments[k.name.toLowerCase()] || []).slice(-50)
     };
 }
 function onlineList() {
@@ -193,6 +206,59 @@ io.on('connection', (socket) => {
         chat[ch].push(m);
         if (chat[ch].length > 60) chat[ch].shift();
         io.emit('chat:msg', m);
+    });
+
+    // ===== Public Profile =====
+    socket.on('profile:get', (name, cb) => {
+        if (typeof cb === 'function') cb(knownOf(name));
+    });
+    socket.on('guild:get', (name, cb) => {
+        const g = db.guilds[name];
+        if (typeof cb === 'function') cb(g ? { name, tag: g.tag, owner: g.owner, members: g.members } : null);
+    });
+    socket.on('profile:vote', ({ name, dir } = {}) => {
+        const me = online[socket.id];
+        if (!me || !db.known[String(name || '').toLowerCase()]) return;
+        if (me.name.toLowerCase() === String(name).toLowerCase()) return; // tidak bisa vote diri sendiri
+        const k = name.toLowerCase();
+        db.rep[k] = db.rep[k] || { up: 0, down: 0 };
+        if (dir === 'up') db.rep[k].up++; else db.rep[k].down++;
+        persist();
+    });
+    socket.on('profile:comment', ({ name, txt } = {}) => {
+        const me = online[socket.id];
+        txt = clean(txt, 200);
+        if (!me || !txt || !db.known[String(name || '').toLowerCase()]) return;
+        const now = Date.now();
+        if (socket.lastComment && now - socket.lastComment < 2000) return;
+        socket.lastComment = now;
+        const k = name.toLowerCase();
+        db.comments[k] = db.comments[k] || [];
+        db.comments[k].push({ name: me.name, av: me.av, txt, t: now });
+        if (db.comments[k].length > 50) db.comments[k].shift();
+        persist();
+    });
+
+    // ===== Player-to-player gift (gold/diamonds/item) =====
+    socket.on('pay:send', ({ toName, gold, dia, item } = {}, cb) => {
+        const reply = (ok, msg) => typeof cb === 'function' && cb({ ok, msg });
+        const me = online[socket.id];
+        if (!me) return reply(false, 'Tidak terhubung');
+        toName = clean(toName, 24);
+        if (!toName || toName.toLowerCase() === me.name.toLowerCase()) return reply(false, 'Target tidak valid');
+        if (!db.known[toName.toLowerCase()]) return reply(false, 'Pemain tidak ditemukan');
+        const g = num(gold), d = num(dia), note = `Hadiah dari ${me.name}`;
+        const items = item ? [clean(item, 80)] : [];
+        const targetSock = Object.keys(online).find(k => online[k].name.toLowerCase() === toName.toLowerCase());
+        if (targetSock) io.to(targetSock).emit('credit', { gold: g, dia: d, items, note });
+        else {
+            const k = toName.toLowerCase();
+            const c = db.credits[k] || { gold: 0, dia: 0, items: [], note };
+            c.gold += g; c.dia = (c.dia || 0) + d; c.items = (c.items || []).concat(items); c.note = note;
+            db.credits[k] = c;
+        }
+        persist();
+        reply(true, `Terkirim ke ${toName}`);
     });
 
     // ===== Admin (butuh ADMIN_PASSWORD) =====
