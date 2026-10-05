@@ -25,7 +25,38 @@ const enemies=[
  {ico:"🗡️",name:"Dark Knight",level:5,hp:100,attack:18,gold:[55,110],xp:[70,120],drop:[]},
  {ico:"👹",name:"Troll",level:8,hp:180,attack:26,gold:[110,220],xp:[140,240],drop:[]},
  {ico:"🥶",name:"Frost Giant",level:12,hp:300,attack:34,gold:[200,380],xp:[260,420],drop:[]},
- {ico:"💀",name:"Void Reaper",level:20,hp:500,attack:48,gold:[400,700],xp:[500,800],drop:[]}
+ {ico:"💀",name:"Void Reaper",level:20,hp:500,attack:48,gold:[400,700],xp:[500,800],drop:[]},
+ {ico:"🦍",name:"Mountain Troll",level:30,hp:750,attack:70,gold:[500,950],xp:[650,1050],drop:[]},
+ {ico:"🦅",name:"Griffon",level:35,hp:950,attack:85,gold:[620,1150],xp:[800,1300],drop:[]},
+ {ico:"😈",name:"Imp",level:50,hp:1300,attack:115,gold:[850,1600],xp:[1100,1800],drop:[]},
+ {ico:"👿",name:"Demon Knight",level:60,hp:1650,attack:140,gold:[1050,1950],xp:[1400,2200],drop:[]},
+ {ico:"🏜️",name:"Sand Wraith",level:100,hp:2800,attack:230,gold:[1800,3400],xp:[2400,3800],drop:[]},
+ {ico:"🧞",name:"Mirage Djinn",level:120,hp:3400,attack:280,gold:[2200,4100],xp:[2900,4600],drop:[]},
+ {ico:"🧝",name:"Elvenguard",level:150,hp:4300,attack:340,gold:[2800,5200],xp:[3700,5800],drop:[]},
+ {ico:"🔮",name:"Ednian Sorcerer",level:170,hp:4900,attack:390,gold:[3200,5900],xp:[4200,6600],drop:[]},
+ {ico:"🗿",name:"Stone Golem",level:200,hp:5800,attack:450,gold:[3800,7000],xp:[5000,7800],drop:[]},
+ {ico:"🐲",name:"Rock Wyvern",level:220,hp:6400,attack:500,gold:[4200,7700],xp:[5500,8500],drop:[]},
+ {ico:"🐊",name:"Swamp Lurker",level:250,hp:7300,attack:560,gold:[4800,8800],xp:[6300,9800],drop:[]},
+ {ico:"🐙",name:"Bog Hydra",level:270,hp:7900,attack:610,gold:[5200,9500],xp:[6800,10500],drop:[]},
+ {ico:"⚰️",name:"Fallen Paladin",level:300,hp:8800,attack:670,gold:[5800,10600],xp:[7600,11800],drop:[]},
+ {ico:"👻",name:"Cathedral Wraith",level:320,hp:9400,attack:720,gold:[6200,11300],xp:[8100,12500],drop:[]},
+ {ico:"🏹",name:"Bandit Captain",level:350,hp:10300,attack:780,gold:[6800,12400],xp:[8900,13800],drop:[]},
+ {ico:"🪓",name:"Highway Brute",level:370,hp:10900,attack:830,gold:[7200,13100],xp:[9400,14500],drop:[]},
+ {ico:"🐍",name:"Lake Serpent",level:400,hp:11800,attack:890,gold:[7800,14200],xp:[10200,15800],drop:[]},
+ {ico:"🌊",name:"Drowned Marauder",level:420,hp:12400,attack:940,gold:[8200,14900],xp:[10700,16500],drop:[]},
+ {ico:"🧟",name:"Elder Wight",level:450,hp:13300,attack:1000,gold:[8800,16000],xp:[11500,17800],drop:[]},
+ {ico:"🛡️",name:"Ancient Guardian",level:470,hp:13900,attack:1050,gold:[9200,16700],xp:[12000,18500],drop:[]},
+ {ico:"🦉",name:"Hawkfel Harpy",level:500,hp:14800,attack:1110,gold:[9800,17800],xp:[12800,19800],drop:[]},
+ {ico:"🗻",name:"Cliff Behemoth",level:520,hp:15400,attack:1160,gold:[10200,18500],xp:[13300,20500],drop:[]},
+ {ico:"☠️",name:"Ranhor Revenant",level:550,hp:16300,attack:1220,gold:[10800,19600],xp:[14100,21800],drop:[]},
+ {ico:"🗿",name:"Ruin Colossus",level:570,hp:16900,attack:1270,gold:[11200,20300],xp:[14600,22500],drop:[]},
+ {ico:"🌋",name:"Venzorian Brute",level:600,hp:17800,attack:1330,gold:[11800,21400],xp:[15400,23800],drop:[]},
+ {ico:"🐕‍🦺",name:"Magma Hound",level:620,hp:18400,attack:1380,gold:[12200,22100],xp:[15900,24500],drop:[]},
+ {ico:"🐉",name:"Wyrmling",level:700,hp:20800,attack:1550,gold:[13800,25000],xp:[18000,27800],drop:[]},
+ {ico:"🐲",name:"Dragon Knight",level:750,hp:22300,attack:1660,gold:[14800,26800],xp:[19300,29800],drop:[]},
+ {ico:"🐉",name:"Ancient Wyrm",level:800,hp:23800,attack:1770,gold:[15800,28600],xp:[20600,31800],drop:[]},
+ {ico:"⚔️",name:"Arkhan Reaper",level:850,hp:25300,attack:1880,gold:[16800,30400],xp:[21900,33800],drop:[]},
+ {ico:"🌑",name:"Voidlord Arkhan",level:900,hp:26800,attack:1990,gold:[17800,32200],xp:[23200,35800],drop:[]}
 ];
 const BOSS={ico:"🐉",name:"🐉 Abyssal Dragon (WORLD BOSS)",level:15,hp:500,attack:35,gold:[500,1000],xp:[800,1500],drop:[]};
 // 4 gathering skill, masing-masing butuh tool sendiri
@@ -628,7 +659,10 @@ function openPanel(type){
  }
  b.innerHTML=h;m.classList.remove("hidden");
 }
-const LBG=["linear-gradient(rgba(0,0,0,.25),rgba(0,0,0,.25)),radial-gradient(ellipse at 80% 110%,#3f8a34 0 30%,transparent 31%),linear-gradient(#5a8a7a,#2f6b4a)","linear-gradient(rgba(0,0,0,.25),rgba(0,0,0,.25)),linear-gradient(170deg,#6a8ab0 0 40%,#3a7a3a 41%,#a8904a 70%,#2f6b2a)","linear-gradient(rgba(0,0,0,.2),rgba(0,0,0,.2)),linear-gradient(#3a1a14,#6a2a1e 60%,#2a120c)","linear-gradient(rgba(0,0,0,.2),rgba(0,0,0,.2)),linear-gradient(#1f6a6a 0 15%,#4a2a3a 16%,#8a3a2a 70%,#3a1a1a)","linear-gradient(rgba(0,0,0,.2),rgba(0,0,0,.2)),linear-gradient(#a8c8e8,#e8f0f8 60%,#8aa8c8)"];
+const LBG=["linear-gradient(rgba(0,0,0,.25),rgba(0,0,0,.25)),radial-gradient(ellipse at 80% 110%,#3f8a34 0 30%,transparent 31%),linear-gradient(#5a8a7a,#2f6b4a)","linear-gradient(rgba(0,0,0,.25),rgba(0,0,0,.25)),linear-gradient(170deg,#6a8ab0 0 40%,#3a7a3a 41%,#a8904a 70%,#2f6b2a)","linear-gradient(rgba(0,0,0,.2),rgba(0,0,0,.2)),linear-gradient(#3a1a14,#6a2a1e 60%,#2a120c)","linear-gradient(rgba(0,0,0,.2),rgba(0,0,0,.2)),linear-gradient(#1f6a6a 0 15%,#4a2a3a 16%,#8a3a2a 70%,#3a1a1a)","linear-gradient(rgba(0,0,0,.2),rgba(0,0,0,.2)),linear-gradient(#a8c8e8,#e8f0f8 60%,#8aa8c8)",
+ "linear-gradient(rgba(0,0,0,.25),rgba(0,0,0,.25)),linear-gradient(#5a7a8a,#8a9a7a 55%,#4a5a3a)","linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.35)),linear-gradient(#2a0a0a,#5a1a1a 60%,#140505)","linear-gradient(rgba(0,0,0,.2),rgba(0,0,0,.25)),linear-gradient(#d8a86a,#b87a3a 55%,#6a4a2a)","linear-gradient(rgba(0,0,0,.2),rgba(0,0,0,.2)),linear-gradient(#3a6a6a,#5a8a7a 55%,#2a4a4a)","linear-gradient(rgba(0,0,0,.2),rgba(0,0,0,.2)),linear-gradient(#7a7a7a,#9a9a9a 55%,#4a4a4a)",
+ "linear-gradient(rgba(0,0,0,.25),rgba(0,0,0,.25)),linear-gradient(#4a5a2a,#6a7a3a 55%,#2a3a1a)","linear-gradient(rgba(0,0,0,.15),rgba(0,0,0,.15)),linear-gradient(#e8e0c8,#c8b888 55%,#d4af37)","linear-gradient(rgba(0,0,0,.2),rgba(0,0,0,.2)),linear-gradient(#a88a5a,#8a6a3a 55%,#5a4525)","linear-gradient(rgba(0,0,0,.2),rgba(0,0,0,.2)),linear-gradient(#1a4a7a,#2a6a9a 55%,#0a2a4a)","linear-gradient(rgba(0,0,0,.3),rgba(0,0,0,.3)),linear-gradient(#3a4a3a,#5a6a4a 55%,#2a3a2a)",
+ "linear-gradient(rgba(0,0,0,.2),rgba(0,0,0,.2)),linear-gradient(#8a6a5a,#d8894a 55%,#4a3a2a)","linear-gradient(rgba(0,0,0,.3),rgba(0,0,0,.3)),linear-gradient(#4a3a5a,#6a4a7a 55%,#2a1a3a)","linear-gradient(rgba(0,0,0,.3),rgba(0,0,0,.3)),linear-gradient(#5a1a0a,#8a3a1a 55%,#2a0a05)","linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.35)),linear-gradient(#4a0a0a,#7a1a1a 55%,#1a0505)","linear-gradient(rgba(0,0,0,.45),rgba(0,0,0,.45)),linear-gradient(#1a0a2a,#3a1a4a 55%,#05020a)"];
 const LPOP=[90686,15996,18179,13384,8021];
 const LB=[["Steps","🥾",s=>s.steps,"steps"],["Gold","🪙",s=>s.gold,"gold"],["Level","✨",s=>s.level,"level"],["NPC Kills","💥",s=>s.kills,"kills"],["Player Kills","⚔️",s=>s.pk||0,"pk"],["Strength","🏆",s=>atk(),"str"],["Dexterity","🏅",s=>dexT(),"dex"],["Defence","🛡️",s=>dfn(),"def"],["Successful Quests","💎",s=>s.qc,"qc"],["World Boss Kills","🐉",s=>s.bk,"bk"],["Woodcutting","🪓",s=>s.sk.Woodcutting[0]],["Mining","⛏️",s=>s.sk.Mining[0]],["Fishing","🎣",s=>s.sk.Fishing[0]],["Treasure Hunting","🗝️",s=>s.sk.Treasure[0]]];
 let lbKey="Steps";
@@ -900,7 +934,10 @@ function menuGo(p){toggleMenu();navGo(p)}
 // ===== DATA DARI smmo-wiki.com =====
 let sprintUntil=0;
 // lokasi: nama, level minimal, musuh
-const LOCS=[["Simpletopia",1,["Slime","Goblin","Wolf"]],["Holbeck",5,["Wolf","Dark Knight"]],["Davenport",10,["Dark Knight","Troll"]],["Ironforge",30,["Troll","Frost Giant"]],["Everwinter",50,["Frost Giant","Void Reaper"]]];
+const LOCS=[["Simpletopia",1,["Slime","Goblin","Wolf"]],["Holbeck",5,["Wolf","Dark Knight"]],["Davenport",10,["Dark Knight","Troll"]],["Ironforge",30,["Troll","Frost Giant","Mountain Troll"]],["Everwinter",50,["Frost Giant","Void Reaper","Griffon"]],
+ ["Elise Mountain",100,["Mountain Troll","Griffon","Imp"]],["The Underworld",150,["Imp","Demon Knight","Elvenguard"]],["Desert of Eternal Dreams",200,["Sand Wraith","Mirage Djinn"]],["Ednia",250,["Elvenguard","Ednian Sorcerer"]],["Mount Byrior",300,["Stone Golem","Rock Wyvern"]],
+ ["Baththagnte Creek",350,["Swamp Lurker","Bog Hydra"]],["Saint Xvilhol",400,["Fallen Paladin","Cathedral Wraith"]],["New Bramp",450,["Bandit Captain","Highway Brute"]],["Lake Masmark",500,["Lake Serpent","Drowned Marauder"]],["Eldham",550,["Elder Wight","Ancient Guardian"]],
+ ["Mount Hawkfels",600,["Hawkfel Harpy","Cliff Behemoth"]],["Old Ranhor",650,["Ranhor Revenant","Ruin Colossus"]],["Venzor",700,["Venzorian Brute","Magma Hound"]],["Dragontail",800,["Wyrmling","Dragon Knight","Ancient Wyrm"]],["Arkhan",900,["Arkhan Reaper","Voidlord Arkhan"]]];
 // Battle Arena: tier, EXP modifier, syarat selesai (NPC), biaya maks (gold)
 const ARENA=[["Copper League",2,100,1000],["Bronze League",2.2,225,2500],["Silver League",2.4,500,6000],["Gold League",2.6,950,9375],["Platinum League",3,1500,11250],["Titanium League",3.5,2500,13750],["7th Circle",4,3000,16250],["Ragnarok",4.5,4000,18750],["Mount Olympus",5,5000,21250],["Rapture",5.5,6000,27000],["Nirvana",6,7500,34500]];
 
